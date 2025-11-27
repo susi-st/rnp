@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生資料查詢系統</title>
+    
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 使用 Inter 字體 */
+        body {
+            font-family: "Inter", "sans-serif";
+        }
+        /* 增加一個自訂的 'selected' 狀態，用於選取動畫 */
+        .student-block.selected, .violation-block.selected {
+            transform: scale(1.02); /* 條款方塊的動畫稍微小一點 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* 可編輯欄位的基本樣式 */
+        .editable-field {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #D1D5DB; /* gray-300 */
+            border-radius: 0.375rem; /* rounded-md */
+            background-color: white;
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1.25rem;
+        }
+        /* 第六欄位（事由）的樣式 */
+        .editable-reason-field {
+            width: 100%; /* 佔滿整行 */
+            margin-top: 0.25rem; /* 稍微和上排欄位分開 */
+        }
+        /* 載入動畫 */
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8">
+        
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">學生資料查詢系統</h1>
+
+        <!-- 1. 年級選擇區 -->
+        <div id="grade-selection" class="border-b border-gray-200 pb-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">1. 選擇年級</h2>
+            <div id="grade-buttons" class="flex flex-wrap gap-3 justify-center">
+                <button data-grade="7" onclick="showClassButtons(7, this)" class="grade-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-offset-2">七年級</button>
+                <button data-grade="8" onclick="showClassButtons(8, this)" class="grade-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-offset-2">八年級</button>
+                <button data-grade="9" onclick="showClassButtons(9, this)" class="grade-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-indigo-500 hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:ring-offset-2">九年級</button>
+            </div>
+        </div>
+
+        <!-- 2. 班級選擇區 -->
+        <div id="class-selection" class="border-b border-gray-200 pb-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">2. 選擇班級</h2>
+            <div id="class-buttons" class="grid grid-cols-5 md:grid-cols-10 gap-2">
+                <p id="class-placeholder" class="text-gray-500 col-span-5 md:col-span-10">請先選擇一個年級</p>
+            </div>
+        </div>
+
+        <!-- 3. 學生顯示區 -->
+        <div id="student-display-area" class="border-b border-gray-200 pb-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">3. 學生名單</h2>
+            <div id="message-area" class="text-center text-gray-600"><p>請選擇班級以顯示學生名單。</p></div>
+            <div id="student-display" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-8 gap-3"></div>
+        </div>
+
+        <!-- 4. 懲處條款選擇區 -->
+        <div id="violation-section" class="border-b border-gray-200 pb-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">4. 選擇懲處條款</h2>
+            <div id="violation-type-buttons" class="flex flex-wrap gap-3 justify-center mb-6">
+                <button data-type="warning" onclick="showViolationClauses('warning', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-4 focus:ring-yellow-300 focus:ring-offset-2">警告</button>
+                <button data-type="minorDemerit" onclick="showViolationClauses('minorDemerit', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-4 focus:ring-orange-300 focus:ring-offset-2">小過</button>
+                <button data-type="majorDemerit" onclick="showViolationClauses('majorDemerit', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-300 focus:ring-offset-2">大過</button>
+            </div>
+            <div id="violation-display" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <p id="violation-placeholder" class="text-gray-500 col-span-1 md:col-span-2 lg:col-span-3 text-center">請選擇一個懲處類別以顯示條款</p>
+            </div>
+        </div>
+
+        <!-- 5. 產生資料區 -->
+        <div id="generation-section">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">5. 產生資料與同步</h2>
+            
+            <div class="flex flex-col items-center">
+                <!-- 設定區塊：輸入 Web App URL -->
+                <div class="w-full mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <label for="webapp-url" class="block text-sm font-medium text-gray-700 mb-2">
+                        Google Apps Script 網頁應用程式網址 (部署後請貼於此處):
+                    </label>
+                    <input 
+                        type="text" 
+                        id="webapp-url" 
+                        placeholder="https://script.google.com/macros/s/......./exec"
+                        class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        onchange="saveWebAppUrl(this.value)"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">
+                        * 請將 Code.gs 部署為 Web App (執行身分: 我, 存取權: 所有人)，並將網址貼到這裡。系統會自動記住此網址。
+                    </p>
+                </div>
+
+                <!-- 按鈕群組 -->
+                <div class="flex flex-wrap gap-4 mb-4">
+                    <button 
+                        id="generate-button"
+                        onclick="generateOutput()"
+                        class="text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-offset-2">
+                        產生 / 更新資料
+                    </button>
+                    <!-- 複製並傳送按鈕 -->
+                    <button 
+                        id="copy-button"
+                        onclick="copyAndSendToSheet()"
+                        class="text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-offset-2 flex items-center">
+                        <span>複製並同步傳送至試算表</span>
+                    </button>
+                </div>
+                
+                <p id="output-message" class="text-gray-600 mb-2 text-sm font-medium h-6"></p>
+                
+                <div id="output-rows-container" class="w-full space-y-3"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuMBC2TB053KqVVItRTQuHjfJ0OY-7SACLO1_CRPbw2a6Je9DXiuRnA6yiNXOTdKKB-mt9T1t84bQy/pub?gid=178152608&single=true&output=csv';
+        let allStudentData = [];
+
+        // DOM 元素
+        const classButtonsContainer = document.getElementById('class-buttons');
+        const studentDisplayContainer = document.getElementById('student-display');
+        const messageArea = document.getElementById('message-area');
+        const classPlaceholder = document.getElementById('class-placeholder');
+        const violationDisplayContainer = document.getElementById('violation-display');
+        const violationPlaceholder = document.getElementById('violation-placeholder');
+        const outputRowsContainer = document.getElementById('output-rows-container');
+        const outputMessage = document.getElementById('output-message');
+        const webappUrlInput = document.getElementById('webapp-url');
+
+        // 讀取儲存的 Web App URL
+        const SAVED_URL_KEY = 'student_system_webapp_url';
+        const savedUrl = localStorage.getItem(SAVED_URL_KEY);
+        if (savedUrl) {
+            webappUrlInput.value = savedUrl;
+        }
+
+        function saveWebAppUrl(url) {
+            localStorage.setItem(SAVED_URL_KEY, url.trim());
+        }
+
+        // 懲處條款資料 (保持不變)
+        const violationData = {
+            warning: [
+                "1. 參加公眾或團體活動等，影響活動秩序、活動進行或他人權益，情節輕微。",
+                "2. 言行涉及公然侮辱、誹謗或恐嚇，情節輕微。",
+                "3. 拾物不送招領，據為己有，情節輕微。",
+                "4. 值勤未盡職責，影響他人權益或工作之推動。",
+                "5. 因過失毀損公物而不主動報告。",
+                "6. 故意毀損公物，情節輕微。",
+                "7. 違反著作權法，情節輕微。",
+                "8. 在公共場所高聲喧嚷影響秩序。",
+                "9. 未經同意偷窺他人訊息或文件，情節輕微。",
+                "10. 未遵守道路交通安全規則，情節輕微。",
+                "11. 違反上課規定，影響教學秩序或他人學習，屢勸不聽。",
+                "12. 攜帶或使用學校訂定教師輔導與管教學生辦法注意事項第三十一點所指違法或違禁物品，情節輕微。",
+                "13. 亂丟垃圾或其他破壞環境衛生行為，經勸導仍未改正。",
+                "14. 以不實言論誤導師長，致未能妥善處理事件。",
+                "15. 不服從師長或糾察隊或幹部因執行公務之糾正，情節輕微。",
+                "16. 違反學校校園行動載具使用管理規範，經勸導無效或影響他人學習權益，情節輕微。"
+            ],
+            minorDemerit: [
+                "1. 參加公眾或團體活動，影響活動秩序、活動進行或他人權益，經勸導仍未改正。",
+                "2. 言行涉及公然侮辱、誹謗或恐嚇，經糾正仍未改正。",
+                "3. 拾物不送招領，據為己有，情節重大。",
+                "4. 擔任班級幹部未盡職責，影響工作推展，情節重大。",
+                "5. 故意毀損公物，屢勸仍再犯且情節尚非重大。",
+                "6. 違反著作權法，屢勸仍再犯且情節尚非重大。",
+                "7. 蓄意違反集會秩序，影響他人權益或集會之進行。",
+                "8. 未經同意偷窺並散播他人訊息或文件。",
+                "9. 賭博行為，情節輕微。",
+                "10. 未遵守道路交通安全規則，經糾正仍未改正或情節重大。",
+                "11. 毆打他人，情節輕微。",
+                "12. 攜帶或使用學校訂定教師輔導與管教學生辦法注意事項第三十一點所指違法或違禁物品，屢勸仍再犯且情節尚非重大。",
+                "13. 竊盜行為，情節輕微。",
+                "14. 不假離校(宿舍)外出。",
+                "15. 不服從師長或糾察隊或幹部因執行公務之糾正，情節重大。",
+                "16. 違反學校校園行動載具使用管理規範，經勸導無效或影響他人學習權益，情節重大。",
+                "17. 吸菸、嚼檳榔、飲用酒類或其他有礙身心健康之物品，經查明屬實且情節輕微。",
+                "18. 蓄意規避公共服務，並影響他人，情節輕微。",
+                "19. 違反試場規則，情節輕微。",
+                "20. 經學校性別平等教育委員會審議認定性騷擾或性霸凌行為屬實，情節輕微。",
+                "21. 經學校校園霸凌防制委員會審議認定霸凌行為屬實，情節輕微。",
+                "22. 觀看、閱覽、收聽或使用有害其身心健康之暴力、血腥、色情、猥褻、賭博之相關媒體資訊或其他物品，情節輕微。",
+                "23. 塗改點名單、請假單、成績單或其他資料。",
+                "24. 出入禁止未滿十八歲進入之場所。",
+                "25. 偽造、變造家長文書或偽造、盜用家長印章、印文或署押。"
+            ],
+            majorDemerit: [
+                "1. 集體械鬥情節重大。",
+                "2. 言行涉及公然侮辱、誹謗或恐嚇，情節重大。",
+                "3. 聚集校外人士到校滋s事。",
+                "4. 勒索威脅。",
+                "5. 故意毀損公物，情節重大。",
+                "6. 違反著作權法，情節重大。",
+                "7. 校內、外言行涉及學校學生獎懲規定或違反公共秩序，經民眾陳情或相關機關通報或引起社會輿情，情節重大。",
+                "8. 未經同意偷窺並散播他人訊息或文件，致影響他人身心健康或名譽受損。",
+                "9. 賭博行為，情節重大。",
+                "10. 樹立幫派或參加不良組織。",
+                "11. 攜帶或使用學校訂定教師輔導與管教學生辦法注意事項第三十一點所指違法或禁物品（違禁品規定詳見附錄），涉及公共安全且情節重大。",
+                "12. 竊盜行為，情節重大。",
+                "13. 違反毒品危害防制條例，經查明屬實。",
+                "14. 吸菸、嚼檳榔、飲用酒類或其他有礙身心健康之物品，經查明屬實且情節重大。",
+                "15. 蓄意規避公共服務，經勸導無效，並有意影響煽動他人，嚴重影響公共事務之推動。",
+                "16. 違反試場規則，情節重大。",
+                "17. 經學校性別平等教育委員會審議認定性侵害、性騷擾或性霸凌行為屬實，情節重大。",
+                "18. 經學校校園霸凌防制委員會審議認定霸凌行為屬實，情節重大。",
+                "19. 觀看、閱覽、收聽或使用有害身心健康之暴力、血腥、色情、猥褻、賭博之相關媒體資訊或其他物品，屢勸仍再犯且情節重大。"
+            ]
+        };
+
+        // 輔助函數 (保持不變)
+        function numberToChinese(num) {
+            const chineseMap = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+            return chineseMap[num] || String(num); 
+        }
+
+        function convertClassNumToName(classNumStr) {
+            if (classNumStr.length !== 3) return classNumStr; 
+            const gradeNum = classNumStr[0]; 
+            const classSuffixNum = parseInt(classNumStr.substring(1)); 
+            let gradeChinese = "";
+            switch (gradeNum) {
+                case '7': gradeChinese = "七"; break;
+                case '8': gradeChinese = "八"; break;
+                case '9': gradeChinese = "九"; break;
+                default: return classNumStr; 
+            }
+            const classChinese = numberToChinese(classSuffixNum);
+            return `${gradeChinese}年${classChinese}班`;
+        }
+
+        function createEditableField(value, type = 'text', className = '', styleString = '') {
+            const input = document.createElement('input');
+            input.type = type;
+            input.value = value;
+            input.className = 'editable-field ' + className;
+            if (styleString) input.style.cssText = styleString; 
+            return input;
+        }
+
+        function createEditableDropdown(defaultValue, options, styleString = '') {
+            const select = document.createElement('select');
+            select.className = 'editable-field'; 
+            if (styleString) select.style.cssText = styleString;
+            options.forEach(optVal => {
+                const option = document.createElement('option');
+                option.value = optVal;
+                option.textContent = optVal;
+                if (optVal === defaultValue) option.selected = true;
+                select.appendChild(option);
+            });
+            return select;
+        }
+
+        window.onload = function() { fetchStudentData(); };
+
+        async function fetchStudentData() {
+            messageArea.innerHTML = '<p class="text-blue-600 font-medium">正在從遠端載入學生資料庫...</p>';
+            try {
+                const cacheBustedUrl = `${csvUrl}&_t=${new Date().getTime()}`;
+                const response = await fetch(cacheBustedUrl);
+                if (!response.ok) throw new Error(`HTTP 錯誤! 狀態: ${response.status}`);
+                const csvText = await response.text();
+                allStudentData = parseCSV(csvText);
+                if (allStudentData.length > 0) {
+                    messageArea.innerHTML = `<p class="text-green-600 font-medium">資料載入完成 (${allStudentData.length} 筆記錄)。請選擇年級與班級。</p>`;
+                } else {
+                    messageArea.innerHTML = `<p class="text-red-600 font-bold">資料載入成功，但未解析到任何學生資料。</p>`;
+                }
+            } catch (error) {
+                console.error('抓取 CSV 資料失敗:', error);
+                messageArea.innerHTML = `<p class="text-red-600 font-bold">資料載入失敗！請檢查網路連線。</p>`;
+            }
+        }
+
+        function parseCSV(csvText) {
+            const data = [];
+            const lines = csvText.split(/\r?\n/); 
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue; 
+                try {
+                    const columns = line.split(','); 
+                    if (columns.length >= 5) {
+                        const gender = columns[3].trim() === '女' ? 'female' : 'male';
+                        data.push({
+                            classNum: columns[0].trim(),
+                            seatNum: columns[1].trim(),
+                            studentId: columns[2].trim(),
+                            gender: gender,
+                            name: columns[4].trim()
+                        });
+                    }
+                } catch (e) { console.warn(e); }
+            }
+            return data;
+        }
+
+        function showClassButtons(grade, clickedButton) {
+            classButtonsContainer.innerHTML = '';
+            studentDisplayContainer.innerHTML = '';
+            messageArea.innerHTML = '<p>請選擇班級以顯示學生名單。</p>';
+            classPlaceholder.style.display = 'none';
+            document.querySelectorAll('.grade-btn').forEach(btn => btn.classList.remove('ring-4', 'ring-offset-2'));
+            if (clickedButton) clickedButton.classList.add('ring-4', 'ring-offset-2');
+            const baseClassNum = grade * 100;
+            for (let i = 1; i <= 10; i++) {
+                const classNum = baseClassNum + i;
+                const classNumStr = String(classNum); 
+                const className = convertClassNumToName(classNumStr); 
+                const btn = document.createElement('button');
+                btn.textContent = classNumStr; 
+                btn.className = 'class-btn text-gray-800 font-semibold py-2 px-3 rounded-md shadow-sm bg-yellow-400 hover:bg-yellow-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2';
+                btn.onclick = () => showStudents(classNumStr, className, btn);
+                classButtonsContainer.appendChild(btn);
+            }
+        }
+
+        function showStudents(classNum, className, clickedButton) {
+            studentDisplayContainer.innerHTML = '';
+            document.querySelectorAll('.class-btn').forEach(btn => btn.classList.remove('ring-4', 'ring-offset-2', 'ring-yellow-600'));
+            if (clickedButton) clickedButton.classList.add('ring-4', 'ring-offset-2', 'ring-yellow-600');
+            const classStudents = allStudentData.filter(student => student.classNum === className);
+            classStudents.sort((a, b) => parseInt(a.seatNum) - parseInt(b.seatNum));
+            if (classStudents.length === 0) {
+                messageArea.innerHTML = `<p class="text-gray-500">班級 ${className} (${classNum}) 沒有找到學生資料。</p>`;
+                return;
+            }
+            messageArea.innerHTML = `<p class="text-gray-700">班級 ${className} (${classNum}) (共 ${classStudents.length} 位學生)</p>`;
+            classStudents.forEach(student => {
+                const block = document.createElement('div');
+                block.className = `student-block flex flex-col items-center justify-center p-4 rounded-lg shadow-md cursor-pointer transition-all duration-200 text-gray-800 ${student.gender === 'female' ? 'bg-pink-200 hover:bg-pink-300' : 'bg-green-200 hover:bg-green-300'}`;
+                block.innerHTML = `<span class="font-medium text-base">${student.seatNum}-${student.name}</span>`;
+                block.dataset.gender = student.gender;
+                block.dataset.selected = 'false';
+                block.dataset.seatNum = student.seatNum; 
+                block.dataset.name = student.name;
+                block.dataset.classId = classNum;
+                block.onclick = toggleStudentSelection;
+                studentDisplayContainer.appendChild(block);
+            });
+        }
+
+        function toggleStudentSelection(event) {
+            const block = event.currentTarget;
+            const isSelected = block.dataset.selected === 'true';
+            const isFemale = block.dataset.gender === 'female';
+            const femaleColors = ['bg-pink-200', 'hover:bg-pink-300', 'bg-pink-500', 'hover:bg-pink-600', 'text-white'];
+            const maleColors = ['bg-green-200', 'hover:bg-green-300', 'bg-green-500', 'hover:bg-green-600', 'text-white'];
+            
+            if (isSelected) {
+                block.dataset.selected = 'false';
+                block.classList.remove('selected', isFemale ? femaleColors[2] : maleColors[2], isFemale ? femaleColors[3] : maleColors[3], 'text-white');
+                block.classList.add(isFemale ? femaleColors[0] : maleColors[0], isFemale ? femaleColors[1] : maleColors[1], 'text-gray-800');
+            } else {
+                block.dataset.selected = 'true';
+                block.classList.add('selected', isFemale ? femaleColors[2] : maleColors[2], isFemale ? femaleColors[3] : maleColors[3], 'text-white');
+                block.classList.remove(isFemale ? femaleColors[0] : maleColors[0], isFemale ? femaleColors[1] : maleColors[1], 'text-gray-800');
+            }
+        }
+
+        function showViolationClauses(category, clickedButton) {
+            violationDisplayContainer.innerHTML = '';
+            violationPlaceholder.style.display = 'none';
+            document.querySelectorAll('.violation-type-btn').forEach(btn => btn.classList.remove('ring-4', 'ring-offset-2'));
+            if (clickedButton) clickedButton.classList.add('ring-4', 'ring-offset-2');
+            const clauses = violationData[category];
+            const colors = {
+                warning: ['bg-yellow-100', 'bg-yellow-500'],
+                minorDemerit: ['bg-orange-100', 'bg-orange-500'],
+                majorDemerit: ['bg-red-100', 'bg-red-500']
+            };
+            clauses.forEach(clause => {
+                const block = document.createElement('div');
+                block.className = `violation-block p-4 rounded-lg shadow-sm cursor-pointer transition-all duration-200 text-left ${colors[category][0]} text-${category === 'warning' ? 'yellow' : category === 'minorDemerit' ? 'orange' : 'red'}-800`;
+                block.innerHTML = `<span class="text-sm font-medium">${clause}</span>`;
+                block.dataset.type = category;
+                block.dataset.selected = 'false';
+                block.dataset.clauseText = clause; 
+                block.onclick = (e) => toggleClauseSelection(e, colors[category]);
+                violationDisplayContainer.appendChild(block);
+            });
+        }
+
+        function toggleClauseSelection(event, colors) {
+            const block = event.currentTarget;
+            const isSelected = block.dataset.selected === 'true';
+            if (isSelected) {
+                block.dataset.selected = 'false';
+                block.classList.remove('selected', colors[1], 'text-white');
+                block.classList.add(colors[0]);
+            } else {
+                block.dataset.selected = 'true';
+                block.classList.add('selected', colors[1], 'text-white');
+                block.classList.remove(colors[0]);
+            }
+        }
+
+        function generateOutput() {
+            outputMessage.textContent = ''; 
+            outputRowsContainer.innerHTML = ''; 
+            const selectedStudents = document.querySelectorAll('.student-block.selected');
+            const selectedViolations = document.querySelectorAll('.violation-block.selected');
+            if (selectedStudents.length === 0 || selectedViolations.length === 0) {
+                outputMessage.textContent = '錯誤：請至少選擇一位學生及一項懲處條款。';
+                outputMessage.className = 'text-red-600 mb-2 text-sm h-5';
+                return;
+            }
+            const today = new Date();
+            const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
+            const categoryMap = { warning: '警告', minorDemerit: '小過', majorDemerit: '大過' };
+            const conditionMap = { warning: ['1', '未再犯即撤消'], minorDemerit: ['1', '有改善始准予銷過'], majorDemerit: ['1', '有改善始准予銷過'] };
+            let totalRows = 0;
+
+            selectedStudents.forEach(studentBlock => {
+                const fullClassId = studentBlock.dataset.classId;
+                const grade = fullClassId.charAt(0);
+                const classVal = String(parseInt(fullClassId.substring(1)));
+                selectedViolations.forEach(violationBlock => {
+                    totalRows++;
+                    const fullClause = violationBlock.dataset.clauseText;
+                    const catKey = violationBlock.dataset.type;
+                    const ruleNum = (fullClause.match(/^(\d+)\./) || [null, 'N/A'])[1];
+                    const clauseOnly = fullClause.replace(/^(\d+)\.\s*/, '').trim();
+
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'output-row p-2 border-b bg-gray-50 rounded-lg';
+                    const l1 = document.createElement('div'); l1.className = 'flex flex-wrap gap-2 items-center';
+                    
+                    // 欄位建立
+                    l1.appendChild(createEditableField(dateStr, 'text', '', 'width: 5rem;')); // 日期
+                    l1.appendChild(createEditableField(grade, 'text', '', 'width: 3rem;')); // 年級
+                    l1.appendChild(createEditableField(classVal, 'text', '', 'width: 3rem;')); // 班級
+                    l1.appendChild(createEditableField(String(today.getMonth() + 1), 'text', '', 'width: 3rem;')); // 月
+                    l1.appendChild(createEditableField(String(today.getDate()), 'text', '', 'width: 3rem;')); // 日
+                    l1.appendChild(createEditableField(studentBlock.dataset.seatNum, 'text', '', 'width: 4rem;')); // 座號
+                    l1.appendChild(createEditableField(studentBlock.dataset.name, 'text', '', 'width: 7rem;')); // 姓名
+                    l1.appendChild(createEditableField(categoryMap[catKey], 'text', '', 'width: 5rem;')); // 獎懲種類
+                    l1.appendChild(createEditableField(ruleNum, 'text', '', 'width: 4rem;')); // 依據條款
+                    l1.appendChild(createEditableDropdown(conditionMap[catKey][0], ['1', '2'], 'width: 5rem;')); // 條件代碼
+                    l1.appendChild(createEditableDropdown(conditionMap[catKey][1], ['未再犯即撤消', '有改善始准予銷過'], 'flex-grow: 1; min-width: 150px;')); // 銷過條件
+
+                    const l2 = document.createElement('div');
+                    l2.appendChild(createEditableField(clauseOnly, 'text', 'editable-reason-field')); // 事由
+
+                    rowDiv.appendChild(l1);
+                    rowDiv.appendChild(l2);
+                    outputRowsContainer.appendChild(rowDiv);
+                });
+            });
+            outputMessage.textContent = `成功產生 ${totalRows} 筆資料。您可以修改欄位或直接傳送。`;
+            outputMessage.className = 'text-green-600 mb-2 text-sm h-5';
+        }
+
+        // *** 核心功能：複製並傳送到試算表 ***
+        async function copyAndSendToSheet() {
+            const rows = outputRowsContainer.querySelectorAll('.output-row');
+            if (rows.length === 0) {
+                outputMessage.textContent = '錯誤：沒有可處理的資料。';
+                outputMessage.className = 'text-red-600 mb-2 text-sm h-5';
+                return;
+            }
+
+            const dataToCopy = [];
+            const dataToSend = [];
+
+            // 1. 收集資料
+            rows.forEach(row => {
+                const inputs1 = row.children[0].querySelectorAll('input, select');
+                const inputReason = row.children[1].querySelector('input');
+                const rowValues = [];
+                
+                // 取出第一行前 7 個欄位 (日期~姓名)
+                for(let i=0; i<7; i++) rowValues.push(inputs1[i].value);
+                // 插入事由 (第 8 個)
+                rowValues.push(inputReason.value);
+                // 取出第一行剩下的欄位 (獎懲~銷過)
+                for(let i=7; i<inputs1.length; i++) rowValues.push(inputs1[i].value);
+
+                dataToCopy.push(rowValues.join('\t')); // 複製用 (Tab 分隔)
+                dataToSend.push(rowValues);            // 傳送用 (陣列)
+            });
+
+            // 2. 執行複製
+            const tempTa = document.createElement('textarea');
+            tempTa.value = dataToCopy.join('\n');
+            document.body.appendChild(tempTa);
+            tempTa.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTa);
+
+            // 3. 執行傳送 (如果有網址)
+            const webAppUrl = webappUrlInput.value.trim();
+            if (webAppUrl) {
+                outputMessage.innerHTML = '<span class="spinner"></span> 資料複製成功！正在同步傳送至 Google 試算表...';
+                outputMessage.className = 'text-blue-600 mb-2 text-sm h-5 flex items-center';
+
+                try {
+                    // 使用 no-cors 模式發送，解決跨域問題 (無法讀取回應，但會執行)
+                    await fetch(webAppUrl, {
+                        method: 'POST',
+                        mode: 'no-cors', 
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({ data: dataToSend })
+                    });
+                    
+                    // 因為 no-cors 看不到回應狀態，我們假設發送出去即成功
+                    setTimeout(() => {
+                        outputMessage.textContent = `複製成功！且已發送請求至試算表 (若網址正確約 2-3 秒後出現於表格)。`;
+                        outputMessage.className = 'text-green-600 mb-2 text-sm h-5';
+                    }, 1000);
+                } catch (err) {
+                    console.error(err);
+                    outputMessage.textContent = '複製成功，但傳送至試算表失敗 (請檢查網址)。';
+                    outputMessage.className = 'text-orange-600 mb-2 text-sm h-5';
+                }
+            } else {
+                outputMessage.textContent = '複製成功！(未設定網址，因此未傳送至試算表)';
+                outputMessage.className = 'text-green-600 mb-2 text-sm h-5';
+            }
+        }
+    </script>
+</body>
+</html>
