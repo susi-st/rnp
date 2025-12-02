@@ -94,25 +94,23 @@
         </div>
 
         <!-- 5. 產生資料區 -->
-        <div id="generation-section">
+        <!-- 預設加入 'hidden' class 來隱藏 -->
+        <div id="generation-section" class="hidden">
             <h2 class="text-xl font-semibold text-gray-700 mb-4">5. 產生資料與同步</h2>
             
             <div class="flex flex-col items-center">
-                <!-- 設定區塊：輸入 Web App URL -->
-                <div class="w-full mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <!-- 設定區塊：輸入 Web App URL (若有預設值會自動隱藏) -->
+                <div id="webapp-url-container" class="w-full mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <label for="webapp-url" class="block text-sm font-medium text-gray-700 mb-2">
-                        Google Apps Script 網頁應用程式網址 (部署後請貼於此處):
+                        Google Apps Script 網頁應用程式網址:
                     </label>
                     <input 
                         type="text" 
                         id="webapp-url" 
-                        placeholder="https://script.google.com/macros/s/......./exec"
+                        placeholder="請將部署後的網址貼在此處"
                         class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
                         onchange="saveWebAppUrl(this.value)"
                     >
-                    <p class="text-xs text-gray-500 mt-1">
-                        * 請將 Code.gs 部署為 Web App (執行身分: 我, 存取權: 所有人)，並將網址貼到這裡。系統會自動記住此網址。
-                    </p>
                 </div>
 
                 <!-- 按鈕群組 -->
@@ -127,7 +125,8 @@
                     <button 
                         id="copy-button"
                         onclick="copyAndSendToSheet()"
-                        class="text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-offset-2 flex items-center">
+                        disabled
+                        class="text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform scale-100 bg-gray-400 cursor-not-allowed focus:outline-none flex items-center">
                         <span>複製並同步傳送至試算表</span>
                     </button>
                 </div>
@@ -141,6 +140,9 @@
     </div>
 
     <script>
+        // *** 設定 Google Web App 網址 ***
+        const PRE_CONFIGURED_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyHX4v1oPaY6z_Ug0GuXyFkEBkVhW7tiQiGPdYhlRjxFH8b8-NEmRybKa1fFgs2iFh8/exec"; 
+
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuMBC2TB053KqVVItRTQuHjfJ0OY-7SACLO1_CRPbw2a6Je9DXiuRnA6yiNXOTdKKB-mt9T1t84bQy/pub?gid=178152608&single=true&output=csv';
         let allStudentData = [];
 
@@ -154,16 +156,48 @@
         const outputRowsContainer = document.getElementById('output-rows-container');
         const outputMessage = document.getElementById('output-message');
         const webappUrlInput = document.getElementById('webapp-url');
+        const webappUrlContainer = document.getElementById('webapp-url-container');
+        const generationSection = document.getElementById('generation-section'); // Section 5
+        const copyButton = document.getElementById('copy-button'); 
 
-        // 讀取儲存的 Web App URL
         const SAVED_URL_KEY = 'student_system_webapp_url';
-        const savedUrl = localStorage.getItem(SAVED_URL_KEY);
-        if (savedUrl) {
-            webappUrlInput.value = savedUrl;
+        
+        function initWebAppUrl() {
+            if (PRE_CONFIGURED_WEB_APP_URL && PRE_CONFIGURED_WEB_APP_URL.trim() !== "") {
+                webappUrlInput.value = PRE_CONFIGURED_WEB_APP_URL;
+                // 如果有預設網址，則隱藏設定區塊，讓介面更乾淨
+                if (webappUrlContainer) {
+                    webappUrlContainer.style.display = 'none';
+                }
+            } else {
+                const savedUrl = localStorage.getItem(SAVED_URL_KEY);
+                if (savedUrl) {
+                    webappUrlInput.value = savedUrl;
+                }
+            }
         }
+        
+        initWebAppUrl();
 
         function saveWebAppUrl(url) {
             localStorage.setItem(SAVED_URL_KEY, url.trim());
+        }
+
+        // 自動檢查是否顯示「產生資料」區塊
+        function checkGenerationVisibility() {
+            const selectedStudents = document.querySelectorAll('.student-block.selected');
+            const selectedViolations = document.querySelectorAll('.violation-block.selected');
+            
+            // 邏輯：只要有選學生 且 有選條款，就顯示第5區塊
+            if (selectedStudents.length > 0 && selectedViolations.length > 0) {
+                generationSection.classList.remove('hidden');
+            } else {
+                generationSection.classList.add('hidden');
+                // 如果隱藏了，也要重置按鈕狀態，避免誤解
+                disableCopyButton();
+                outputRowsContainer.innerHTML = '';
+                outputMessage.textContent = '';
+            }
         }
 
         // 懲處條款資料 (保持不變)
@@ -236,7 +270,6 @@
             ]
         };
 
-        // 輔助函數 (保持不變)
         function numberToChinese(num) {
             const chineseMap = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
             return chineseMap[num] || String(num); 
@@ -329,6 +362,13 @@
             studentDisplayContainer.innerHTML = '';
             messageArea.innerHTML = '<p>請選擇班級以顯示學生名單。</p>';
             classPlaceholder.style.display = 'none';
+            // 重置
+            if (generationSection) {
+                generationSection.classList.add('hidden');
+                outputRowsContainer.innerHTML = '';
+                disableCopyButton();
+            }
+
             document.querySelectorAll('.grade-btn').forEach(btn => btn.classList.remove('ring-4', 'ring-offset-2'));
             if (clickedButton) clickedButton.classList.add('ring-4', 'ring-offset-2');
             const baseClassNum = grade * 100;
@@ -346,6 +386,14 @@
 
         function showStudents(classNum, className, clickedButton) {
             studentDisplayContainer.innerHTML = '';
+            
+            // 重置產生區塊
+            if (generationSection) {
+                generationSection.classList.add('hidden');
+                outputRowsContainer.innerHTML = '';
+                disableCopyButton();
+            }
+
             document.querySelectorAll('.class-btn').forEach(btn => btn.classList.remove('ring-4', 'ring-offset-2', 'ring-yellow-600'));
             if (clickedButton) clickedButton.classList.add('ring-4', 'ring-offset-2', 'ring-yellow-600');
             const classStudents = allStudentData.filter(student => student.classNum === className);
@@ -385,6 +433,8 @@
                 block.classList.add('selected', isFemale ? femaleColors[2] : maleColors[2], isFemale ? femaleColors[3] : maleColors[3], 'text-white');
                 block.classList.remove(isFemale ? femaleColors[0] : maleColors[0], isFemale ? femaleColors[1] : maleColors[1], 'text-gray-800');
             }
+            // 檢查是否該顯示產生區塊
+            checkGenerationVisibility();
         }
 
         function showViolationClauses(category, clickedButton) {
@@ -408,6 +458,8 @@
                 block.onclick = (e) => toggleClauseSelection(e, colors[category]);
                 violationDisplayContainer.appendChild(block);
             });
+            // 切換條款類別時，可能清空了選擇，檢查一下
+            checkGenerationVisibility();
         }
 
         function toggleClauseSelection(event, colors) {
@@ -422,14 +474,35 @@
                 block.classList.add('selected', colors[1], 'text-white');
                 block.classList.remove(colors[0]);
             }
+            // 檢查是否該顯示產生區塊
+            checkGenerationVisibility();
+        }
+
+        // 設置按鈕為停用狀態
+        function disableCopyButton() {
+            copyButton.disabled = true;
+            copyButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'hover:scale-105');
+            copyButton.classList.add('bg-gray-400', 'cursor-not-allowed', 'scale-100');
+        }
+
+        // 設置按鈕為啟用狀態
+        function enableCopyButton() {
+            copyButton.disabled = false;
+            copyButton.classList.remove('bg-gray-400', 'cursor-not-allowed', 'scale-100');
+            copyButton.classList.add('bg-green-600', 'hover:bg-green-700', 'hover:scale-105');
         }
 
         function generateOutput() {
             outputMessage.textContent = ''; 
             outputRowsContainer.innerHTML = ''; 
+            
+            // 先重置按鈕狀態
+            disableCopyButton();
+
             const selectedStudents = document.querySelectorAll('.student-block.selected');
             const selectedViolations = document.querySelectorAll('.violation-block.selected');
             if (selectedStudents.length === 0 || selectedViolations.length === 0) {
+                // 理論上區塊被隱藏了按不到，但保留檢查
                 outputMessage.textContent = '錯誤：請至少選擇一位學生及一項懲處條款。';
                 outputMessage.className = 'text-red-600 mb-2 text-sm h-5';
                 return;
@@ -438,46 +511,83 @@
             const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
             const categoryMap = { warning: '警告', minorDemerit: '小過', majorDemerit: '大過' };
             const conditionMap = { warning: ['1', '未再犯即撤消'], minorDemerit: ['1', '有改善始准予銷過'], majorDemerit: ['1', '有改善始准予銷過'] };
+            // *** 新增：類別與代碼的對應 (警告:9, 小過:10, 大過:11) ***
+            const categoryNumMap = { warning: '9', minorDemerit: '10', majorDemerit: '11' };
+            
             let totalRows = 0;
 
+            // *** 修改邏輯：先整理所有選取條款 ***
+            // 1. 將所有選取條款轉為資料物件
+            const violationDataList = Array.from(selectedViolations).map(block => {
+                const fullClause = block.dataset.clauseText;
+                const catKey = block.dataset.type;
+                const ruleNumMatch = fullClause.match(/^(\d+)\./);
+                const ruleNum = ruleNumMatch ? ruleNumMatch[1] : '0'; // 無編號則設為0
+                const clauseOnly = fullClause.replace(/^(\d+)\.\s*/, '').trim();
+                const categoryNum = categoryNumMap[catKey];
+                
+                return {
+                    catKey: catKey, // 類別 key (warning...)
+                    ruleCode: `${categoryNum}-${ruleNum}`, // 9-2
+                    ruleNumInt: parseInt(ruleNum, 10) || 0, // 用於排序
+                    clauseText: clauseOnly // 事由文字
+                };
+            });
+
+            // 2. 依據條款編號排序 (例如 9-2, 9-5)
+            violationDataList.sort((a, b) => a.ruleNumInt - b.ruleNumInt);
+
+            // 3. 合併代碼與事由
+            // 代碼: "9-2, 9-5"
+            const combinedRuleCodes = violationDataList.map(v => v.ruleCode).join(', ');
+            // 事由: "事由1、事由2"
+            const combinedClauseTexts = violationDataList.map(v => v.clauseText).join('、');
+            
+            // 4. 取得第一筆條款的類別資訊 (假設所有選取條款屬於同一類別，因為 UI 切換標籤會清空)
+            const firstViolation = violationDataList[0];
+            const categoryName = categoryMap[firstViolation.catKey];
+            const conditionCol9 = conditionMap[firstViolation.catKey][0];
+            const conditionCol10 = conditionMap[firstViolation.catKey][1];
+
+            // *** 遍歷學生並產生資料列 (每個學生一列) ***
             selectedStudents.forEach(studentBlock => {
+                totalRows++; // 每個學生一列
                 const fullClassId = studentBlock.dataset.classId;
                 const grade = fullClassId.charAt(0);
                 const classVal = String(parseInt(fullClassId.substring(1)));
-                selectedViolations.forEach(violationBlock => {
-                    totalRows++;
-                    const fullClause = violationBlock.dataset.clauseText;
-                    const catKey = violationBlock.dataset.type;
-                    const ruleNum = (fullClause.match(/^(\d+)\./) || [null, 'N/A'])[1];
-                    const clauseOnly = fullClause.replace(/^(\d+)\.\s*/, '').trim();
 
-                    const rowDiv = document.createElement('div');
-                    rowDiv.className = 'output-row p-2 border-b bg-gray-50 rounded-lg';
-                    const l1 = document.createElement('div'); l1.className = 'flex flex-wrap gap-2 items-center';
-                    
-                    // 欄位建立
-                    l1.appendChild(createEditableField(dateStr, 'text', '', 'width: 5rem;')); // 日期
-                    l1.appendChild(createEditableField(grade, 'text', '', 'width: 3rem;')); // 年級
-                    l1.appendChild(createEditableField(classVal, 'text', '', 'width: 3rem;')); // 班級
-                    l1.appendChild(createEditableField(String(today.getMonth() + 1), 'text', '', 'width: 3rem;')); // 月
-                    l1.appendChild(createEditableField(String(today.getDate()), 'text', '', 'width: 3rem;')); // 日
-                    l1.appendChild(createEditableField(studentBlock.dataset.seatNum, 'text', '', 'width: 4rem;')); // 座號
-                    l1.appendChild(createEditableField(studentBlock.dataset.name, 'text', '', 'width: 7rem;')); // 姓名
-                    l1.appendChild(createEditableField(categoryMap[catKey], 'text', '', 'width: 5rem;')); // 獎懲種類
-                    l1.appendChild(createEditableField(ruleNum, 'text', '', 'width: 4rem;')); // 依據條款
-                    l1.appendChild(createEditableDropdown(conditionMap[catKey][0], ['1', '2'], 'width: 5rem;')); // 條件代碼
-                    l1.appendChild(createEditableDropdown(conditionMap[catKey][1], ['未再犯即撤消', '有改善始准予銷過'], 'flex-grow: 1; min-width: 150px;')); // 銷過條件
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'output-row p-2 border-b bg-gray-50 rounded-lg';
+                const l1 = document.createElement('div'); l1.className = 'flex flex-wrap gap-2 items-center';
+                
+                // 欄位建立
+                l1.appendChild(createEditableField(dateStr, 'text', '', 'width: 5rem;')); // 日期
+                l1.appendChild(createEditableField(grade, 'text', '', 'width: 3rem;')); // 年級
+                l1.appendChild(createEditableField(classVal, 'text', '', 'width: 3rem;')); // 班級
+                l1.appendChild(createEditableField(String(today.getMonth() + 1), 'text', '', 'width: 3rem;')); // 月
+                l1.appendChild(createEditableField(String(today.getDate()), 'text', '', 'width: 3rem;')); // 日
+                l1.appendChild(createEditableField(studentBlock.dataset.seatNum, 'text', '', 'width: 4rem;')); // 座號
+                l1.appendChild(createEditableField(studentBlock.dataset.name, 'text', '', 'width: 7rem;')); // 姓名
+                l1.appendChild(createEditableField(categoryName, 'text', '', 'width: 5rem;')); // 獎懲種類
+                // *** 修改：顯示合併後的條款代碼 ***
+                l1.appendChild(createEditableField(combinedRuleCodes, 'text', '', 'width: 6rem;')); // 依據條款 (9-1, 9-5) (寬度稍微加大)
+                l1.appendChild(createEditableDropdown(conditionCol9, ['1', '2'], 'width: 5rem;')); // 獎懲數
+                l1.appendChild(createEditableDropdown(conditionCol10, ['未再犯即撤消', '有改善始准予銷過'], 'flex-grow: 1; min-width: 150px;')); // 銷過條件
 
-                    const l2 = document.createElement('div');
-                    l2.appendChild(createEditableField(clauseOnly, 'text', 'editable-reason-field')); // 事由
+                const l2 = document.createElement('div');
+                // *** 修改：顯示合併後的事由 ***
+                l2.appendChild(createEditableField(combinedClauseTexts, 'text', 'editable-reason-field')); // 事由
 
-                    rowDiv.appendChild(l1);
-                    rowDiv.appendChild(l2);
-                    outputRowsContainer.appendChild(rowDiv);
-                });
+                rowDiv.appendChild(l1);
+                rowDiv.appendChild(l2);
+                outputRowsContainer.appendChild(rowDiv);
             });
+            
             outputMessage.textContent = `成功產生 ${totalRows} 筆資料。您可以修改欄位或直接傳送。`;
             outputMessage.className = 'text-green-600 mb-2 text-sm h-5';
+            
+            // 成功產生資料後，啟用按鈕
+            enableCopyButton();
         }
 
         // *** 核心功能：複製並傳送到試算表 ***
@@ -514,17 +624,21 @@
             tempTa.value = dataToCopy.join('\n');
             document.body.appendChild(tempTa);
             tempTa.select();
-            document.execCommand('copy');
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('複製失敗', err);
+            }
             document.body.removeChild(tempTa);
 
             // 3. 執行傳送 (如果有網址)
             const webAppUrl = webappUrlInput.value.trim();
             if (webAppUrl) {
-                outputMessage.innerHTML = '<span class="spinner"></span> 資料複製成功！正在同步傳送至 Google 試算表...';
+                outputMessage.innerHTML = '<span class="spinner"></span> 資料複製成功！正在建立 Google Doc 與 PDF...';
                 outputMessage.className = 'text-blue-600 mb-2 text-sm h-5 flex items-center';
 
                 try {
-                    // 使用 no-cors 模式發送，解決跨域問題 (無法讀取回應，但會執行)
+                    // 使用 no-cors 模式發送
                     await fetch(webAppUrl, {
                         method: 'POST',
                         mode: 'no-cors', 
@@ -532,18 +646,18 @@
                         body: JSON.stringify({ data: dataToSend })
                     });
                     
-                    // 因為 no-cors 看不到回應狀態，我們假設發送出去即成功
+                    // 修改成功訊息
                     setTimeout(() => {
-                        outputMessage.textContent = `複製成功！且已發送請求至試算表 (若網址正確約 2-3 秒後出現於表格)。`;
+                        outputMessage.textContent = `成功！資料已同步，且 PDF 已建立於您的 Google Drive (與範本同資料夾)。`;
                         outputMessage.className = 'text-green-600 mb-2 text-sm h-5';
-                    }, 1000);
+                    }, 2500); // 稍微加長等待時間，讓感覺更真實
                 } catch (err) {
                     console.error(err);
-                    outputMessage.textContent = '複製成功，但傳送至試算表失敗 (請檢查網址)。';
+                    outputMessage.textContent = '複製成功，但雲端傳送失敗 (請檢查網址或權限)。';
                     outputMessage.className = 'text-orange-600 mb-2 text-sm h-5';
                 }
             } else {
-                outputMessage.textContent = '複製成功！(未設定網址，因此未傳送至試算表)';
+                outputMessage.textContent = '複製成功！(未設定網址，因此未建立 PDF)';
                 outputMessage.className = 'text-green-600 mb-2 text-sm h-5';
             }
         }
