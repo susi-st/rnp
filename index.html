@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: "Inter", "sans-serif", "Microsoft JhengHei"; }
-        /* 強化選中狀態的縮放與陰影 */
         .student-block.selected, .violation-block.selected {
             transform: scale(1.05);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -20,6 +19,12 @@
             background-color: white;
             font-size: 0.875rem;
             line-height: 1.25rem;
+            outline: none;
+        }
+        .editable-field:focus {
+            border-color: #3B82F6;
+            ring: 2px;
+            ring-color: #BFDBFE;
         }
         .editable-reason-field { width: 100%; margin-top: 0.25rem; }
         .spinner {
@@ -84,15 +89,17 @@
         <div id="generation-section" class="hidden">
             <h2 class="text-xl font-semibold text-gray-700 mb-4">5. 產生資料與同步</h2>
             <div class="flex flex-col items-center">
+                
                 <div id="webapp-url-container" class="w-full mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <label for="webapp-url" class="block text-sm font-medium text-gray-700 mb-2">Google Apps Script 網址:</label>
+                    <label for="webapp-url" class="block text-sm font-medium text-gray-700 mb-1">Google Apps Script 網址:</label>
                     <input type="text" id="webapp-url" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm" onchange="saveWebAppUrl(this.value)">
                 </div>
+
                 <div class="flex flex-wrap gap-4 mb-4">
                     <button id="generate-button" onclick="generateOutput()" class="text-white font-bold py-3 px-6 rounded-lg shadow-md transition bg-blue-600 hover:bg-blue-700">產生 / 更新資料</button>
                     <button id="copy-button" onclick="copyAndSendToSheet()" disabled class="text-white font-bold py-3 px-6 rounded-lg shadow-md bg-gray-400 cursor-not-allowed">複製並同步傳送至試算表</button>
                 </div>
-                <p id="output-message" class="text-gray-600 mb-2 text-sm font-medium h-6"></p>
+                <p id="output-message" class="text-gray-600 mb-2 text-sm font-medium h-6 text-center"></p>
                 <div id="output-rows-container" class="w-full space-y-3"></div>
             </div>
         </div>
@@ -103,7 +110,7 @@
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuMBC2TB053KqVVItRTQuHjfJ0OY-7SACLO1_CRPbw2a6Je9DXiuRnA6yiNXOTdKKB-mt9T1t84bQy/pub?gid=178152608&single=true&output=csv';
         
         let allStudentData = [];
-        let urlNote = ""; // 全域變數存儲來自 URL 的補充說明
+        let urlNote = "";
         const SAVED_URL_KEY = 'student_system_webapp_url';
 
         const classButtonsContainer = document.getElementById('class-buttons');
@@ -124,26 +131,28 @@
                 "1. 服裝儀容經常整潔，合於規定，足為同學模範者。", "2. 禮儀周到足為同學模範者。", "3. 參加團體活動確有成績表現者。", "4. 節儉樸素足為同學模範者。", "5. 與同學互助合作者。", "6. 值勤特別盡職者。", "7. 主動為公服務者。", "8. 勸告同學向善者。", "9. 運動比賽時體育道德表現優良者。", "10. 領導同學為團體服務者。", "11. 愛護公物有具體事蹟者。", "12. 生活言行較前進步，有事實表現者。", "13. 在車船上讓座師長、老弱、婦孺者。", "14. 其他優良行為合於記嘉獎者。"
             ],
             warning: [
-                "1. 參加公眾或團體活動等，影響活動秩序、活動進行或他人權益，情節輕微。", "2. 言行涉及公然侮辱、誹謗或恐嚇，情節輕微。", "3. 拾物不送招領，據為己有，情節輕微。", "4. 值勤未盡職責，影響他人權益或工作之推動。", "5. 因過失毀損公物而不主動報告。", "6. 故意毀損公物，情節輕微。", "7. 違反著作權法，情節輕微。", "8. 在公共場所高聲喧嚷影響秩序。", "9. 未經同意偷窺他人訊息或文件，情節輕微。", "10. 未遵守道路交通安全規則，情節輕微。", "11. 違反上課規定，影響教學秩序或他人學習，屢勸不聽。", "12. 攜帶或使用違法或違禁物品，情節輕微。", "13. 亂丟垃圾或其他破壞環境衛生行為，經勸導仍未改正。", "14. 以不實言論誤導師長，致未能妥善處理事件。", "15. 不服從師長或糾察隊或幹部因執行公務之糾正，情節輕微。", "16. 違反學校校園行動載具使用管理規範，情節輕微。"
+                "1. 參加公眾或團體活動等，影響活動秩序、活動進行或他人權益，情節輕微。", "2. 言行涉及公然侮辱、誹謗或恐嚇，情節輕微。", "3. 拾物不送招領，據為己有，情節輕微。", "4. 值勤未盡職責，影響他人權益或工作之推動。", "5. 因過失毀損公物而不主動報告。", "6. 故意毀損公物，情節輕微。", "7. 違反著作權法，情節輕微。", "8. 在公共場所高聲喧嚷影響秩序。", "9. 未經同意偷窺他人訊息或文件，情節輕微。", "10. 未遵守道路交通安全規則，情節輕微。", "11. 違反上課規定，影響教學秩序或他人學習，屢勸不聽。", "12. 攜帶或使用違法或違禁物品，情節輕微。", "13. 亂丟垃圾或其他破壞環境衛生行為，經勸導仍未改正。", "14. 以不實言論誤導師長，致未能妥善處理事件。", "15. 不服從師長 or 糾察隊 or 幹部因執行公務之糾正，情節輕微。", "16. 違反學校校園行動載具使用管理規範，情節輕微。"
             ],
             minorDemerit: [
-                "1. 參加公眾或團體活動，影響活動秩序，經勸導仍未改正。", "2. 言行涉及公然侮辱、誹謗或恐嚇，經糾正仍未改正。", "3. 拾物不送招領，據為己有，情節重大。", "4. 擔任班級幹部未盡職責，影響工作推展，情節重大。", "5. 故意毀損公物，屢勸仍再犯且情節尚非重大。", "6. 違反著作權法，屢勸仍再犯且情節尚非重大。", "7. 蓄意違反集會秩序，影響他人權益或集會之進行。", "8. 未經同意偷窺並散播他人訊息或文件。", "9. 賭博行為，情節輕微。", "10. 未遵守道路交通安全規則，經糾正仍未改正或情節重大。", "11. 毆打他人，情節輕微。", "12. 攜帶或使用違法或違禁物品，屢勸仍再犯且情節尚非重大。", "13. 竊盜行為，情節輕微。", "14. 不假離校(宿舍)外出。", "15. 不服從師長或糾察隊或幹部因執行公務之糾正，情節重大。", "16. 違反學校校園行動載具使用管理規範，情節重大。", "17. 吸菸、嚼檳榔、飲用酒類或其他有礙身心健康之物品，經查明屬實且情節輕微。", "18. 蓄意規備公共服務，並影響他人，情節輕微。", "19. 違反試場規則，情節輕微。", "20. 性騷擾或性霸凌行為屬實，情節輕微。", "21. 霸凌行為屬實，情節輕微。", "22. 閱覽有害身心健康之媒體資訊或其他物品，情節輕微。", "23. 塗改點名單、請假單、成績單或其他資料。", "24. 出入禁止未滿十八歲進入之場所。", "25. 偽造、變造家長文書或偽造、盜用家長印章、印文或署押。"
+                "1. 參加公眾或團體活動，影響活動秩序，經勸導仍未改正。", "2. 言行涉及公然侮辱、誹謗或恐嚇，經糾正仍未改正。", "3. 拾物不送招領，據為己有，情節重大。", "4. 擔任班級幹部未盡職責，影響工作推展，情節重大。", "5. 故意毀損公物，屢勸仍再犯且情節尚非重大。", "6. 違反著作權法，屢勸仍再犯且情節尚非重大。", "7. 蓄意違反集會秩序，影響他人權益或集會之進行。", "8. 未經同意偷窺並散播他人訊息或文件。", "9. 賭博行為，情節輕微。", "10. 未遵守道路交通安全規則，經糾正仍未改正或情節重大。", "11. 毆打他人，情節輕微。", "12. 攜帶或使用違法或違禁物品，屢勸仍再犯且情節尚非重大。", "13. 竊盜行為，情節輕微。", "14. 不假離校(宿舍)外出。", "15. 不服從師長 or 糾察隊 or 幹部因執行公務之糾正，情節重大。", "16. 違反學校校園行動載具使用管理規範，情節重大。", "17. 吸菸、嚼檳榔、飲用酒類或其他有礙身心健康之物品，經查明屬實且情節輕微。", "18. 蓄意規備公共服務，並影響他人，情節輕微。", "19. 違反試場規則，情節輕微。", "20. 性騷擾 or 性霸凌行為屬實，情節輕微。", "21. 霸凌行為屬實，情節輕微。", "22. 閱覽有害身心健康之媒體資訊或其他物品，情節輕微。", "23. 塗改點名單、請假單、成績單或其他資料。", "24. 出入禁止未滿十八歲進入之場所。", "25. 偽造、變造家長文書 or 偽造、盜用家長印章、印文 or 署押。"
             ],
             majorDemerit: [
-                "1. 集體械鬥情節重大。", "2. 言行涉及公然侮辱、誹謗或恐嚇，情節重大。", "3. 聚集校外人士到校滋事。", "4. 勒索威脅。", "5. 故意毀損公物，情節重大。", "6. 違反著作權法，情節重大。", "7. 校內、外言行涉及學校規定或違反公共秩序，情節重大。", "8. 未經同意偷窺並散播他人訊息，致影響他人身心健康或名譽受損。", "9. 賭博行為，情節重大。", "10. 樹立幫派或參加不良組織。", "11. 攜帶或使用違法或禁物品，涉及公共安全且情節重大。", "12. 竊盜行為，情節重大。", "13. 違反毒品危害防制條例，經查明屬實。", "14. 吸菸、嚼檳榔、飲用酒類或其他有礙身心健康之物品，情節重大。", "15. 蓄意規避公共服務並煽動他人，嚴重影響公共事務之推動。", "16. 違反試場規則，情節重大。", "17. 性侵害、性騷擾或性霸凌行為屬實，情節重大。", "18. 霸凌行為屬實，情節重大。", "19. 閱覽有害身心健康之相關媒體資訊，屢勸仍再犯且情節重大。"
+                "1. 集體械鬥情節重大。", "2. 言行涉及公然侮辱、誹謗 or 恐嚇，情節重大。", "3. 聚集校外人士到校滋事。", "4. 勒索威脅。", "5. 故意毀損公物，情節重大。", "6. 違反著作權法，情節重大。", "7. 校內、外言行涉及學校規定 or 違反公共秩序，情節重大。", "8. 未經同意偷窺並散播他人訊息，致影響他人身心健康 or 名譽受損。", "9. 賭博行為，情節重大。", "10. 樹立幫派 or 參加不良組織。", "11. 攜帶 or 使用違法 or 禁物品，涉及公共安全且情節重大。", "12. 竊盜行為，情節重大。", "13. 違反毒品危害防制條例，經查明屬實。", "14. 吸菸、嚼檳榔、飲用酒類或其他有礙身心健康之物品，情節重大。", "15. 蓄意規避公共服務並煽動他人，嚴重影響公共事務之推動。", "16. 違反試場規則，情節重大。", "17. 性侵害、性騷擾 or 性霸凌行為屬實，情節重大。", "18. 霸凌行為屬實，情節重大。", "19. 閱覽有害身心健康之相關媒體資訊，屢勸仍再犯且情節重大。"
             ],
             special: [
-                "1. 在校期間獎懲相抵後滿三大過者。", "2. 參加或組織不良幫派，屢勸不聽者。", "3. 故意損毀國旗者。", "4. 故意不尊敬國家元首者。", "5. 違反政府法令情節重大者。", "6. 集體械鬥或打傷他人情節重大者。", "7. 竊盜行為情節重大者。", "8. 反抗師長，情節重大者。", "9. 其他特別不良行為。"
+                "1. 在校期間獎懲相抵後滿三大過者。", "2. 參加 or 組織不良幫派，屢勸不聽者。", "3. 故意損毀國旗者。", "4. 故意不尊敬國家元首者。", "5. 違反政府法令情節重大者。", "6. 集體械鬥 or 打傷他人情節重大者。", "7. 竊盜行為情節重大者。", "8. 反抗師長，情節重大者。", "9. 其他特別不良行為。"
             ]
         };
 
         function initWebAppUrl() {
-            if (PRE_CONFIGURED_WEB_APP_URL) {
+            if (webappUrlInput && PRE_CONFIGURED_WEB_APP_URL && !PRE_CONFIGURED_WEB_APP_URL.includes("您的_")) {
                 webappUrlInput.value = PRE_CONFIGURED_WEB_APP_URL;
-                webappUrlContainer.style.display = 'none';
+                if (webappUrlContainer) {
+                    webappUrlContainer.style.display = 'none';
+                }
             } else {
                 const savedUrl = localStorage.getItem(SAVED_URL_KEY);
-                if (savedUrl) webappUrlInput.value = savedUrl;
+                if (savedUrl && webappUrlInput) webappUrlInput.value = savedUrl;
             }
         }
 
@@ -223,10 +232,6 @@
             });
         }
 
-        /**
-         * 處理 URL 參數以自動選中並產生
-         * 格式：?select=805-12,805-20&type=warning&clause=11&note=抽菸
-         */
         async function handleUrlParams() {
             const params = new URLSearchParams(window.location.search);
             const selectData = params.get('select');
@@ -241,44 +246,31 @@
             const classId = firstItem[0];
             const grade = classId[0];
 
-            // 1. 自動點擊年級
             const gradeBtn = document.querySelector(`.grade-btn[data-grade="${grade}"]`);
             if (gradeBtn) showClassButtons(grade, gradeBtn);
 
-            // 2. 自動點擊班級
             const classBtn = document.getElementById(`btn-class-${classId}`);
             if (classBtn) {
                 showStudents(classId, convertClassNumToName(classId), classBtn);
-                
-                // 3. 自動點擊學生
                 const targetSeats = items.map(i => i.split('-')[1]);
                 document.querySelectorAll('.student-block').forEach(block => {
-                    if (targetSeats.includes(block.dataset.seatNum)) {
-                        block.click();
-                    }
+                    if (targetSeats.includes(block.dataset.seatNum)) { block.click(); }
                 });
             }
 
-            // 4. 自動處理條款
             if (type) {
                 const typeBtn = document.getElementById(`btn-type-${type}`);
                 if (typeBtn) {
                     showViolationClauses(type, typeBtn);
-                    
                     if (clauseNum) {
-                        // 尋找對應編號的條款並點擊
                         const clauseBlocks = document.querySelectorAll('.violation-block');
                         for (let block of clauseBlocks) {
-                            if (block.dataset.clauseText.startsWith(clauseNum + ".")) {
-                                block.click();
-                                break;
-                            }
+                            if (block.dataset.clauseText.startsWith(clauseNum + ".")) { block.click(); break; }
                         }
                     }
                 }
             }
 
-            // 5. 如果條件充足，直接觸發產生
             if (document.querySelectorAll('.student-block.selected').length > 0 && 
                 document.querySelectorAll('.violation-block.selected').length > 0) {
                 generateOutput();
@@ -299,12 +291,8 @@
                 d.onclick = () => {
                     const isS = d.dataset.selected === 'true';
                     d.dataset.selected = !isS;
-                    d.classList.toggle('selected');
-                    d.classList.toggle(`bg-${cls}-700`);
-                    d.classList.toggle('text-white');
-                    d.classList.toggle('ring-4');
-                    d.classList.toggle(`ring-${cls}-300`);
-                    d.classList.toggle('ring-offset-2');
+                    d.classList.toggle('selected'); d.classList.toggle(`bg-${cls}-700`); d.classList.toggle('text-white');
+                    d.classList.toggle('ring-4'); d.classList.toggle(`ring-${cls}-300`); d.classList.toggle('ring-offset-2');
                     checkGenerationVisibility();
                 };
                 violationDisplayContainer.appendChild(d);
@@ -318,6 +306,7 @@
             outputRowsContainer.innerHTML = '';
             const ss = document.querySelectorAll('.student-block.selected');
             const vs = document.querySelectorAll('.violation-block.selected');
+            
             const now = new Date(); const dStr = `${now.getMonth()+1}/${now.getDate()}`;
             const map = { merit:'嘉獎', warning:'警告', minorDemerit:'小過', majorDemerit:'大過', special:'特別處罰' };
             const numMap = { merit:'7', warning:'9', minorDemerit:'10', majorDemerit:'11', special:'12' };
@@ -328,52 +317,127 @@
             }).sort((a,b) => a.code.localeCompare(b.code));
 
             const codes = vList.map(v => v.code).join(', ');
-            
-            // 處理事由：結合條款文字與補充說明
             let combinedTexts = vList.map(v => v.text).join('、');
-            if (urlNote && urlNote.trim() !== "") {
-                combinedTexts += (combinedTexts ? "、" : "") + urlNote;
-            }
-
+            if (urlNote && urlNote.trim() !== "") { combinedTexts += (combinedTexts ? "、" : "") + urlNote; }
             const cat = map[vList[0].cat];
 
             ss.forEach(s => {
                 const r = document.createElement('div'); r.className = 'output-row p-3 border-b bg-gray-50 rounded-lg space-y-2';
-                const l1 = document.createElement('div'); l1.className = 'flex flex-wrap gap-2';
-                const fields = [dStr, s.dataset.classId[0], parseInt(s.dataset.classId.substring(1)), now.getMonth()+1, now.getDate(), s.dataset.seatNum, s.dataset.name, cat, codes];
-                fields.forEach((f, idx) => {
-                    const w = [5,3,3,3,3,4,7,5,6][idx];
-                    const i = document.createElement('input'); i.value = f; i.className = 'editable-field'; i.style.width = w+'rem';
+                const l1 = document.createElement('div'); l1.className = 'flex flex-wrap gap-2 items-center';
+                
+                // 基礎輸入欄位 (0-8)
+                const baseFields = [
+                    {val: dStr, w: 5}, 
+                    {val: s.dataset.classId[0], w: 3}, 
+                    {val: parseInt(s.dataset.classId.substring(1)), w: 3}, 
+                    {val: now.getMonth()+1, w: 3}, 
+                    {val: now.getDate(), w: 3}, 
+                    {val: s.dataset.seatNum, w: 4}, 
+                    {val: s.dataset.name, w: 7}, 
+                    {val: cat, w: 5}, 
+                    {val: codes, w: 6}
+                ];
+
+                baseFields.forEach(f => {
+                    const i = document.createElement('input'); 
+                    i.value = f.val; 
+                    i.className = 'editable-field'; 
+                    i.style.width = f.w + 'rem';
                     l1.appendChild(i);
                 });
-                const i2 = document.createElement('input'); i2.value = combinedTexts; i2.className = 'editable-field editable-reason-field';
-                r.appendChild(l1); r.appendChild(i2); outputRowsContainer.appendChild(r);
+
+                // 數量下拉選單
+                const sCount = document.createElement('select');
+                sCount.className = 'editable-field';
+                sCount.style.width = '4rem';
+                [1, 2].forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v; opt.textContent = v;
+                    sCount.appendChild(opt);
+                });
+                l1.appendChild(sCount);
+
+                // 條件下拉選單
+                const sCond = document.createElement('select');
+                sCond.className = 'editable-field';
+                sCond.style.width = '10rem';
+                ['未再犯即撤消', '有改善始准予銷過'].forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v; opt.textContent = v;
+                    sCond.appendChild(opt);
+                });
+                l1.appendChild(sCond);
+
+                // 第二列：事由
+                const l2 = document.createElement('div');
+                const i2 = document.createElement('input'); 
+                i2.value = combinedTexts; 
+                i2.className = 'editable-field editable-reason-field';
+                l2.appendChild(i2);
+                
+                r.appendChild(l1); 
+                r.appendChild(l2); 
+                outputRowsContainer.appendChild(r);
             });
-            outputMessage.textContent = `已產生 ${ss.length} 筆資料。`; enableCopyButton();
+            outputMessage.textContent = `已產生 ${ss.length} 筆資料。請點擊「同步」完成處理。`; enableCopyButton();
         }
 
         async function copyAndSendToSheet() {
             const rows = document.querySelectorAll('.output-row');
             const url = webappUrlInput.value.trim();
             const copyD = [], sendD = [];
+            
             rows.forEach(r => {
-                const v = Array.from(r.querySelectorAll('input')).map(i => i.value);
-                const s = [v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[8], v[9], v[7]];
-                copyD.push(s.join('\t')); sendD.push(s);
+                const inputs = Array.from(r.querySelectorAll('input'));
+                const selects = Array.from(r.querySelectorAll('select'));
+                
+                const v = inputs.map(i => i.value);
+                const s = selects.map(sel => sel.value);
+                
+                // 更新後的傳送順序：
+                // v[0]:日期, v[1]:年, v[2]:班, v[3]:月, v[4]:日, v[5]:座號, v[6]:姓名, 
+                // v[7]:種類, v[8]:條款, v[9]:事由, s[0]:數量, s[1]:條件
+                
+                // 依照要求重新排序：
+                // 索引 7: 事由 (v[9])
+                // 索引 8: 種類 (v[7])
+                // 索引 9: 條款 (v[8])
+                // 索引 10: 數量 (s[0])
+                // 索引 11: 條件 (s[1])
+                const finalRow = [
+                    v[0], v[1], v[2], v[3], v[4], v[5], v[6], // 0-6
+                    v[9], // 7: 事由
+                    v[7], // 8: 獎懲種類
+                    v[8], // 9: 依據條款
+                    s[0], // 10: 獎懲數
+                    s[1]  // 11: 銷過條件
+                ];
+
+                copyD.push(finalRow.join('\t')); 
+                sendD.push(finalRow);
             });
+
             const ta = document.createElement('textarea'); ta.value = copyD.join('\n'); document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-            if (url) {
-                outputMessage.innerHTML = '<span class="spinner"></span> 正在同步至試算表...';
+            
+            if (url && !url.includes("您的_")) {
+                outputMessage.innerHTML = '<span class="spinner"></span> 正在傳送至 Google 雲端進行寫入與產生文件...';
                 try {
-                    await fetch(url, { method:'POST', mode:'no-cors', body: JSON.stringify(sendD) });
-                    outputMessage.textContent = '✅ 已複製並同步完成！'; outputMessage.className = 'text-green-600 font-bold';
-                } catch (e) { outputMessage.textContent = '❌ 同步失敗，僅完成複製。'; }
+                    await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(sendD) });
+                    setTimeout(() => {
+                        outputMessage.innerHTML = '✅ <span class="text-green-600">同步請求已發送！請檢查試算表與雲端資料夾。</span>';
+                        outputMessage.className = 'font-bold mt-2';
+                    }, 1500);
+                } catch (e) {
+                    outputMessage.textContent = '❌ 同步失敗，僅完成剪貼簿複製。';
+                }
+            } else {
+                outputMessage.textContent = '⚠️ 尚未設定 Web App 網址，僅完成剪貼簿複製。';
             }
         }
 
         window.onload = async () => { 
-            initWebAppUrl(); 
             await fetchStudentData(); 
+            initWebAppUrl(); 
             handleUrlParams(); 
         };
     </script>
