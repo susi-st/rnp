@@ -4,34 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>學生資料查詢系統</title>
-    
-    <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 使用 Inter 字體 */
-        body {
-            font-family: "Inter", "sans-serif";
-        }
-        /* 增加一個自訂的 'selected' 狀態，用於選取動畫 */
+        body { font-family: "Inter", "sans-serif", "Microsoft JhengHei"; }
+        /* 強化選中狀態的縮放與陰影 */
         .student-block.selected, .violation-block.selected {
-            transform: scale(1.02); /* 條款方塊的動畫稍微小一點 */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: scale(1.05);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            z-index: 10;
         }
-        /* 可編輯欄位的基本樣式 */
         .editable-field {
             padding: 0.25rem 0.5rem;
-            border: 1px solid #D1D5DB; /* gray-300 */
-            border-radius: 0.375rem; /* rounded-md */
+            border: 1px solid #D1D5DB;
+            border-radius: 0.375rem;
             background-color: white;
-            font-size: 0.875rem; /* text-sm */
+            font-size: 0.875rem;
             line-height: 1.25rem;
         }
-        /* 第六欄位（事由）的樣式 */
-        .editable-reason-field {
-            width: 100%; /* 佔滿整行 */
-            margin-top: 0.25rem; /* 稍微和上排欄位分開 */
-        }
-        /* 載入動畫 */
+        .editable-reason-field { width: 100%; margin-top: 0.25rem; }
         .spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #3498db;
@@ -43,25 +33,20 @@
             vertical-align: middle;
             margin-right: 8px;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8">
-
     <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8">
-        
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">學生資料查詢系統</h1>
 
         <!-- 1. 年級選擇區 -->
         <div id="grade-selection" class="border-b border-gray-200 pb-6 mb-6">
             <h2 class="text-xl font-semibold text-gray-700 mb-4">1. 選擇年級</h2>
             <div id="grade-buttons" class="flex flex-wrap gap-3 justify-center">
-                <button data-grade="7" onclick="showClassButtons(7, this)" class="grade-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-offset-2">七年級</button>
-                <button data-grade="8" onclick="showClassButtons(8, this)" class="grade-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-offset-2">八年級</button>
-                <button data-grade="9" onclick="showClassButtons(9, this)" class="grade-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-indigo-500 hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:ring-offset-2">九年級</button>
+                <button data-grade="7" onclick="showClassButtons(7, this)" class="grade-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transition bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300">七年級</button>
+                <button data-grade="8" onclick="showClassButtons(8, this)" class="grade-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transition bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-4 focus:ring-green-300">八年級</button>
+                <button data-grade="9" onclick="showClassButtons(9, this)" class="grade-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transition bg-indigo-500 hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-300">九年級</button>
             </div>
         </div>
 
@@ -69,84 +54,58 @@
         <div id="class-selection" class="border-b border-gray-200 pb-6 mb-6">
             <h2 class="text-xl font-semibold text-gray-700 mb-4">2. 選擇班級</h2>
             <div id="class-buttons" class="grid grid-cols-5 md:grid-cols-10 gap-2">
-                <p id="class-placeholder" class="text-gray-500 col-span-5 md:col-span-10">請先選擇一個年級</p>
+                <p id="class-placeholder" class="text-gray-500 col-span-full">請先選擇一個年級</p>
             </div>
         </div>
 
         <!-- 3. 學生顯示區 -->
         <div id="student-display-area" class="border-b border-gray-200 pb-6 mb-6">
             <h2 class="text-xl font-semibold text-gray-700 mb-4">3. 學生名單</h2>
-            <div id="message-area" class="text-center text-gray-600"><p>請選擇班級以顯示學生名單。</p></div>
+            <div id="message-area" class="text-center text-gray-600 mb-4"><p>請選擇班級以顯示學生名單。</p></div>
             <div id="student-display" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-8 gap-3"></div>
         </div>
 
-        <!-- 4. 懲處條款選擇區 -->
+        <!-- 4. 獎懲條款選擇區 -->
         <div id="violation-section" class="border-b border-gray-200 pb-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4">4. 選擇懲處條款</h2>
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">4. 選擇獎懲條款</h2>
             <div id="violation-type-buttons" class="flex flex-wrap gap-3 justify-center mb-6">
-                <button data-type="warning" onclick="showViolationClauses('warning', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-4 focus:ring-yellow-300 focus:ring-offset-2">警告</button>
-                <button data-type="minorDemerit" onclick="showViolationClauses('minorDemerit', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-4 focus:ring-orange-300 focus:ring-offset-2">小過</button>
-                <button data-type="majorDemerit" onclick="showViolationClauses('majorDemerit', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-300 focus:ring-offset-2">大過</button>
+                <button id="btn-type-merit" data-type="merit" onclick="showViolationClauses('merit', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transition bg-emerald-500 hover:bg-emerald-600 focus:ring-4 focus:ring-emerald-300">嘉獎</button>
+                <button id="btn-type-warning" data-type="warning" onclick="showViolationClauses('warning', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transition bg-yellow-500 hover:bg-yellow-600 focus:ring-4 focus:ring-yellow-300">警告</button>
+                <button id="btn-type-minorDemerit" data-type="minorDemerit" onclick="showViolationClauses('minorDemerit', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transition bg-orange-500 hover:bg-orange-600 focus:ring-4 focus:ring-orange-300">小過</button>
+                <button id="btn-type-majorDemerit" data-type="majorDemerit" onclick="showViolationClauses('majorDemerit', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transition bg-red-500 hover:bg-red-600 focus:ring-4 focus:ring-red-300">大過</button>
+                <button id="btn-type-special" data-type="special" onclick="showViolationClauses('special', this)" class="violation-type-btn text-white font-bold py-3 px-6 rounded-lg shadow-md transition bg-purple-600 hover:bg-purple-700 focus:ring-4 focus:ring-purple-300">特別處罰</button>
             </div>
             <div id="violation-display" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                <p id="violation-placeholder" class="text-gray-500 col-span-1 md:col-span-2 lg:col-span-3 text-center">請選擇一個懲處類別以顯示條款</p>
+                <p id="violation-placeholder" class="text-gray-500 col-span-full text-center">請選擇一個類別以顯示條款</p>
             </div>
         </div>
 
         <!-- 5. 產生資料區 -->
-        <!-- 預設加入 'hidden' class 來隱藏 -->
         <div id="generation-section" class="hidden">
             <h2 class="text-xl font-semibold text-gray-700 mb-4">5. 產生資料與同步</h2>
-            
             <div class="flex flex-col items-center">
-                <!-- 設定區塊：輸入 Web App URL (若有預設值會自動隱藏) -->
                 <div id="webapp-url-container" class="w-full mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <label for="webapp-url" class="block text-sm font-medium text-gray-700 mb-2">
-                        Google Apps Script 網頁應用程式網址:
-                    </label>
-                    <input 
-                        type="text" 
-                        id="webapp-url" 
-                        placeholder="請將部署後的網址貼在此處"
-                        class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        onchange="saveWebAppUrl(this.value)"
-                    >
+                    <label for="webapp-url" class="block text-sm font-medium text-gray-700 mb-2">Google Apps Script 網址:</label>
+                    <input type="text" id="webapp-url" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm" onchange="saveWebAppUrl(this.value)">
                 </div>
-
-                <!-- 按鈕群組 -->
                 <div class="flex flex-wrap gap-4 mb-4">
-                    <button 
-                        id="generate-button"
-                        onclick="generateOutput()"
-                        class="text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform hover:scale-105 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-offset-2">
-                        產生 / 更新資料
-                    </button>
-                    <!-- 複製並傳送按鈕 -->
-                    <button 
-                        id="copy-button"
-                        onclick="copyAndSendToSheet()"
-                        disabled
-                        class="text-white font-bold py-3 px-6 rounded-lg shadow-md transform transition-transform scale-100 bg-gray-400 cursor-not-allowed focus:outline-none flex items-center">
-                        <span>複製並同步傳送至試算表</span>
-                    </button>
+                    <button id="generate-button" onclick="generateOutput()" class="text-white font-bold py-3 px-6 rounded-lg shadow-md transition bg-blue-600 hover:bg-blue-700">產生 / 更新資料</button>
+                    <button id="copy-button" onclick="copyAndSendToSheet()" disabled class="text-white font-bold py-3 px-6 rounded-lg shadow-md bg-gray-400 cursor-not-allowed">複製並同步傳送至試算表</button>
                 </div>
-                
                 <p id="output-message" class="text-gray-600 mb-2 text-sm font-medium h-6"></p>
-                
                 <div id="output-rows-container" class="w-full space-y-3"></div>
             </div>
         </div>
-
     </div>
 
     <script>
-        // *** 設定 Google Web App 網址 ***
         const PRE_CONFIGURED_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyHX4v1oPaY6z_Ug0GuXyFkEBkVhW7tiQiGPdYhlRjxFH8b8-NEmRybKa1fFgs2iFh8/exec"; 
-
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuMBC2TB053KqVVItRTQuHjfJ0OY-7SACLO1_CRPbw2a6Je9DXiuRnA6yiNXOTdKKB-mt9T1t84bQy/pub?gid=178152608&single=true&output=csv';
+        
         let allStudentData = [];
+        let urlNote = ""; // 全域變數存儲來自 URL 的補充說明
+        const SAVED_URL_KEY = 'student_system_webapp_url';
 
-        // DOM 元素
         const classButtonsContainer = document.getElementById('class-buttons');
         const studentDisplayContainer = document.getElementById('student-display');
         const messageArea = document.getElementById('message-area');
@@ -157,510 +116,266 @@
         const outputMessage = document.getElementById('output-message');
         const webappUrlInput = document.getElementById('webapp-url');
         const webappUrlContainer = document.getElementById('webapp-url-container');
-        const generationSection = document.getElementById('generation-section'); // Section 5
-        const copyButton = document.getElementById('copy-button'); 
+        const generationSection = document.getElementById('generation-section');
+        const copyButton = document.getElementById('copy-button');
 
-        const SAVED_URL_KEY = 'student_system_webapp_url';
-        
-        function initWebAppUrl() {
-            if (PRE_CONFIGURED_WEB_APP_URL && PRE_CONFIGURED_WEB_APP_URL.trim() !== "") {
-                webappUrlInput.value = PRE_CONFIGURED_WEB_APP_URL;
-                // 如果有預設網址，則隱藏設定區塊，讓介面更乾淨
-                if (webappUrlContainer) {
-                    webappUrlContainer.style.display = 'none';
-                }
-            } else {
-                const savedUrl = localStorage.getItem(SAVED_URL_KEY);
-                if (savedUrl) {
-                    webappUrlInput.value = savedUrl;
-                }
-            }
-        }
-        
-        initWebAppUrl();
-
-        function saveWebAppUrl(url) {
-            localStorage.setItem(SAVED_URL_KEY, url.trim());
-        }
-
-        // 自動檢查是否顯示「產生資料」區塊
-        function checkGenerationVisibility() {
-            const selectedStudents = document.querySelectorAll('.student-block.selected');
-            const selectedViolations = document.querySelectorAll('.violation-block.selected');
-            
-            // 邏輯：只要有選學生 且 有選條款，就顯示第5區塊
-            if (selectedStudents.length > 0 && selectedViolations.length > 0) {
-                generationSection.classList.remove('hidden');
-            } else {
-                generationSection.classList.add('hidden');
-                // 如果隱藏了，也要重置按鈕狀態，避免誤解
-                disableCopyButton();
-                outputRowsContainer.innerHTML = '';
-                outputMessage.textContent = '';
-            }
-        }
-
-        // 懲處條款資料 (保持不變)
         const violationData = {
+            merit: [
+                "1. 服裝儀容經常整潔，合於規定，足為同學模範者。", "2. 禮儀周到足為同學模範者。", "3. 參加團體活動確有成績表現者。", "4. 節儉樸素足為同學模範者。", "5. 與同學互助合作者。", "6. 值勤特別盡職者。", "7. 主動為公服務者。", "8. 勸告同學向善者。", "9. 運動比賽時體育道德表現優良者。", "10. 領導同學為團體服務者。", "11. 愛護公物有具體事蹟者。", "12. 生活言行較前進步，有事實表現者。", "13. 在車船上讓座師長、老弱、婦孺者。", "14. 其他優良行為合於記嘉獎者。"
+            ],
             warning: [
-                "1. 參加公眾或團體活動等，影響活動秩序、活動進行或他人權益，情節輕微。",
-                "2. 言行涉及公然侮辱、誹謗或恐嚇，情節輕微。",
-                "3. 拾物不送招領，據為己有，情節輕微。",
-                "4. 值勤未盡職責，影響他人權益或工作之推動。",
-                "5. 因過失毀損公物而不主動報告。",
-                "6. 故意毀損公物，情節輕微。",
-                "7. 違反著作權法，情節輕微。",
-                "8. 在公共場所高聲喧嚷影響秩序。",
-                "9. 未經同意偷窺他人訊息或文件，情節輕微。",
-                "10. 未遵守道路交通安全規則，情節輕微。",
-                "11. 違反上課規定，影響教學秩序或他人學習，屢勸不聽。",
-                "12. 攜帶或使用學校訂定教師輔導與管教學生辦法注意事項第三十一點所指違法或違禁物品，情節輕微。",
-                "13. 亂丟垃圾或其他破壞環境衛生行為，經勸導仍未改正。",
-                "14. 以不實言論誤導師長，致未能妥善處理事件。",
-                "15. 不服從師長或糾察隊或幹部因執行公務之糾正，情節輕微。",
-                "16. 違反學校校園行動載具使用管理規範，經勸導無效或影響他人學習權益，情節輕微。"
+                "1. 參加公眾或團體活動等，影響活動秩序、活動進行或他人權益，情節輕微。", "2. 言行涉及公然侮辱、誹謗或恐嚇，情節輕微。", "3. 拾物不送招領，據為己有，情節輕微。", "4. 值勤未盡職責，影響他人權益或工作之推動。", "5. 因過失毀損公物而不主動報告。", "6. 故意毀損公物，情節輕微。", "7. 違反著作權法，情節輕微。", "8. 在公共場所高聲喧嚷影響秩序。", "9. 未經同意偷窺他人訊息或文件，情節輕微。", "10. 未遵守道路交通安全規則，情節輕微。", "11. 違反上課規定，影響教學秩序或他人學習，屢勸不聽。", "12. 攜帶或使用違法或違禁物品，情節輕微。", "13. 亂丟垃圾或其他破壞環境衛生行為，經勸導仍未改正。", "14. 以不實言論誤導師長，致未能妥善處理事件。", "15. 不服從師長或糾察隊或幹部因執行公務之糾正，情節輕微。", "16. 違反學校校園行動載具使用管理規範，情節輕微。"
             ],
             minorDemerit: [
-                "1. 參加公眾或團體活動，影響活動秩序、活動進行或他人權益，經勸導仍未改正。",
-                "2. 言行涉及公然侮辱、誹謗或恐嚇，經糾正仍未改正。",
-                "3. 拾物不送招領，據為己有，情節重大。",
-                "4. 擔任班級幹部未盡職責，影響工作推展，情節重大。",
-                "5. 故意毀損公物，屢勸仍再犯且情節尚非重大。",
-                "6. 違反著作權法，屢勸仍再犯且情節尚非重大。",
-                "7. 蓄意違反集會秩序，影響他人權益或集會之進行。",
-                "8. 未經同意偷窺並散播他人訊息或文件。",
-                "9. 賭博行為，情節輕微。",
-                "10. 未遵守道路交通安全規則，經糾正仍未改正或情節重大。",
-                "11. 毆打他人，情節輕微。",
-                "12. 攜帶或使用學校訂定教師輔導與管教學生辦法注意事項第三十一點所指違法或違禁物品，屢勸仍再犯且情節尚非重大。",
-                "13. 竊盜行為，情節輕微。",
-                "14. 不假離校(宿舍)外出。",
-                "15. 不服從師長或糾察隊或幹部因執行公務之糾正，情節重大。",
-                "16. 違反學校校園行動載具使用管理規範，經勸導無效或影響他人學習權益，情節重大。",
-                "17. 吸菸、嚼檳榔、飲用酒類或其他有礙身心健康之物品，經查明屬實且情節輕微。",
-                "18. 蓄意規避公共服務，並影響他人，情節輕微。",
-                "19. 違反試場規則，情節輕微。",
-                "20. 經學校性別平等教育委員會審議認定性騷擾或性霸凌行為屬實，情節輕微。",
-                "21. 經學校校園霸凌防制委員會審議認定霸凌行為屬實，情節輕微。",
-                "22. 觀看、閱覽、收聽或使用有害其身心健康之暴力、血腥、色情、猥褻、賭博之相關媒體資訊或其他物品，情節輕微。",
-                "23. 塗改點名單、請假單、成績單或其他資料。",
-                "24. 出入禁止未滿十八歲進入之場所。",
-                "25. 偽造、變造家長文書或偽造、盜用家長印章、印文或署押。"
+                "1. 參加公眾或團體活動，影響活動秩序，經勸導仍未改正。", "2. 言行涉及公然侮辱、誹謗或恐嚇，經糾正仍未改正。", "3. 拾物不送招領，據為己有，情節重大。", "4. 擔任班級幹部未盡職責，影響工作推展，情節重大。", "5. 故意毀損公物，屢勸仍再犯且情節尚非重大。", "6. 違反著作權法，屢勸仍再犯且情節尚非重大。", "7. 蓄意違反集會秩序，影響他人權益或集會之進行。", "8. 未經同意偷窺並散播他人訊息或文件。", "9. 賭博行為，情節輕微。", "10. 未遵守道路交通安全規則，經糾正仍未改正或情節重大。", "11. 毆打他人，情節輕微。", "12. 攜帶或使用違法或違禁物品，屢勸仍再犯且情節尚非重大。", "13. 竊盜行為，情節輕微。", "14. 不假離校(宿舍)外出。", "15. 不服從師長或糾察隊或幹部因執行公務之糾正，情節重大。", "16. 違反學校校園行動載具使用管理規範，情節重大。", "17. 吸菸、嚼檳榔、飲用酒類或其他有礙身心健康之物品，經查明屬實且情節輕微。", "18. 蓄意規備公共服務，並影響他人，情節輕微。", "19. 違反試場規則，情節輕微。", "20. 性騷擾或性霸凌行為屬實，情節輕微。", "21. 霸凌行為屬實，情節輕微。", "22. 閱覽有害身心健康之媒體資訊或其他物品，情節輕微。", "23. 塗改點名單、請假單、成績單或其他資料。", "24. 出入禁止未滿十八歲進入之場所。", "25. 偽造、變造家長文書或偽造、盜用家長印章、印文或署押。"
             ],
             majorDemerit: [
-                "1. 集體械鬥情節重大。",
-                "2. 言行涉及公然侮辱、誹謗或恐嚇，情節重大。",
-                "3. 聚集校外人士到校滋s事。",
-                "4. 勒索威脅。",
-                "5. 故意毀損公物，情節重大。",
-                "6. 違反著作權法，情節重大。",
-                "7. 校內、外言行涉及學校學生獎懲規定或違反公共秩序，經民眾陳情或相關機關通報或引起社會輿情，情節重大。",
-                "8. 未經同意偷窺並散播他人訊息或文件，致影響他人身心健康或名譽受損。",
-                "9. 賭博行為，情節重大。",
-                "10. 樹立幫派或參加不良組織。",
-                "11. 攜帶或使用學校訂定教師輔導與管教學生辦法注意事項第三十一點所指違法或禁物品（違禁品規定詳見附錄），涉及公共安全且情節重大。",
-                "12. 竊盜行為，情節重大。",
-                "13. 違反毒品危害防制條例，經查明屬實。",
-                "14. 吸菸、嚼檳榔、飲用酒類或其他有礙身心健康之物品，經查明屬實且情節重大。",
-                "15. 蓄意規避公共服務，經勸導無效，並有意影響煽動他人，嚴重影響公共事務之推動。",
-                "16. 違反試場規則，情節重大。",
-                "17. 經學校性別平等教育委員會審議認定性侵害、性騷擾或性霸凌行為屬實，情節重大。",
-                "18. 經學校校園霸凌防制委員會審議認定霸凌行為屬實，情節重大。",
-                "19. 觀看、閱覽、收聽或使用有害身心健康之暴力、血腥、色情、猥褻、賭博之相關媒體資訊或其他物品，屢勸仍再犯且情節重大。"
+                "1. 集體械鬥情節重大。", "2. 言行涉及公然侮辱、誹謗或恐嚇，情節重大。", "3. 聚集校外人士到校滋事。", "4. 勒索威脅。", "5. 故意毀損公物，情節重大。", "6. 違反著作權法，情節重大。", "7. 校內、外言行涉及學校規定或違反公共秩序，情節重大。", "8. 未經同意偷窺並散播他人訊息，致影響他人身心健康或名譽受損。", "9. 賭博行為，情節重大。", "10. 樹立幫派或參加不良組織。", "11. 攜帶或使用違法或禁物品，涉及公共安全且情節重大。", "12. 竊盜行為，情節重大。", "13. 違反毒品危害防制條例，經查明屬實。", "14. 吸菸、嚼檳榔、飲用酒類或其他有礙身心健康之物品，情節重大。", "15. 蓄意規避公共服務並煽動他人，嚴重影響公共事務之推動。", "16. 違反試場規則，情節重大。", "17. 性侵害、性騷擾或性霸凌行為屬實，情節重大。", "18. 霸凌行為屬實，情節重大。", "19. 閱覽有害身心健康之相關媒體資訊，屢勸仍再犯且情節重大。"
+            ],
+            special: [
+                "1. 在校期間獎懲相抵後滿三大過者。", "2. 參加或組織不良幫派，屢勸不聽者。", "3. 故意損毀國旗者。", "4. 故意不尊敬國家元首者。", "5. 違反政府法令情節重大者。", "6. 集體械鬥或打傷他人情節重大者。", "7. 竊盜行為情節重大者。", "8. 反抗師長，情節重大者。", "9. 其他特別不良行為。"
             ]
         };
 
-        function numberToChinese(num) {
-            const chineseMap = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
-            return chineseMap[num] || String(num); 
-        }
-
-        function convertClassNumToName(classNumStr) {
-            if (classNumStr.length !== 3) return classNumStr; 
-            const gradeNum = classNumStr[0]; 
-            const classSuffixNum = parseInt(classNumStr.substring(1)); 
-            let gradeChinese = "";
-            switch (gradeNum) {
-                case '7': gradeChinese = "七"; break;
-                case '8': gradeChinese = "八"; break;
-                case '9': gradeChinese = "九"; break;
-                default: return classNumStr; 
+        function initWebAppUrl() {
+            if (PRE_CONFIGURED_WEB_APP_URL) {
+                webappUrlInput.value = PRE_CONFIGURED_WEB_APP_URL;
+                webappUrlContainer.style.display = 'none';
+            } else {
+                const savedUrl = localStorage.getItem(SAVED_URL_KEY);
+                if (savedUrl) webappUrlInput.value = savedUrl;
             }
-            const classChinese = numberToChinese(classSuffixNum);
-            return `${gradeChinese}年${classChinese}班`;
         }
 
-        function createEditableField(value, type = 'text', className = '', styleString = '') {
-            const input = document.createElement('input');
-            input.type = type;
-            input.value = value;
-            input.className = 'editable-field ' + className;
-            if (styleString) input.style.cssText = styleString; 
-            return input;
-        }
+        function saveWebAppUrl(url) { localStorage.setItem(SAVED_URL_KEY, url.trim()); }
 
-        function createEditableDropdown(defaultValue, options, styleString = '') {
-            const select = document.createElement('select');
-            select.className = 'editable-field'; 
-            if (styleString) select.style.cssText = styleString;
-            options.forEach(optVal => {
-                const option = document.createElement('option');
-                option.value = optVal;
-                option.textContent = optVal;
-                if (optVal === defaultValue) option.selected = true;
-                select.appendChild(option);
-            });
-            return select;
+        function checkGenerationVisibility() {
+            const s = document.querySelectorAll('.student-block.selected').length;
+            const v = document.querySelectorAll('.violation-block.selected').length;
+            generationSection.classList.toggle('hidden', !(s > 0 && v > 0));
+            if (s === 0 || v === 0) disableCopyButton();
         }
-
-        window.onload = function() { fetchStudentData(); };
 
         async function fetchStudentData() {
-            messageArea.innerHTML = '<p class="text-blue-600 font-medium">正在從遠端載入學生資料庫...</p>';
+            messageArea.innerHTML = '<p class="text-blue-600 font-medium">正在載入學生資料...</p>';
             try {
-                const cacheBustedUrl = `${csvUrl}&_t=${new Date().getTime()}`;
-                const response = await fetch(cacheBustedUrl);
-                if (!response.ok) throw new Error(`HTTP 錯誤! 狀態: ${response.status}`);
-                const csvText = await response.text();
-                allStudentData = parseCSV(csvText);
-                if (allStudentData.length > 0) {
-                    messageArea.innerHTML = `<p class="text-green-600 font-medium">資料載入完成 (${allStudentData.length} 筆記錄)。請選擇年級與班級。</p>`;
-                } else {
-                    messageArea.innerHTML = `<p class="text-red-600 font-bold">資料載入成功，但未解析到任何學生資料。</p>`;
-                }
-            } catch (error) {
-                console.error('抓取 CSV 資料失敗:', error);
-                messageArea.innerHTML = `<p class="text-red-600 font-bold">資料載入失敗！請檢查網路連線。</p>`;
-            }
+                const res = await fetch(`${csvUrl}&_t=${Date.now()}`);
+                const text = await res.text();
+                allStudentData = parseCSV(text);
+                messageArea.innerHTML = `<p class="text-green-600 font-medium">載入成功 (${allStudentData.length} 筆)。</p>`;
+            } catch (e) { messageArea.innerHTML = '<p class="text-red-600">載入失敗！</p>'; }
         }
 
-        function parseCSV(csvText) {
-            const data = [];
-            const lines = csvText.split(/\r?\n/); 
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue; 
-                try {
-                    const columns = line.split(','); 
-                    if (columns.length >= 5) {
-                        const gender = columns[3].trim() === '女' ? 'female' : 'male';
-                        data.push({
-                            classNum: columns[0].trim(),
-                            seatNum: columns[1].trim(),
-                            studentId: columns[2].trim(),
-                            gender: gender,
-                            name: columns[4].trim()
-                        });
-                    }
-                } catch (e) { console.warn(e); }
-            }
-            return data;
+        function parseCSV(text) {
+            return text.split(/\r?\n/).slice(1).filter(l => l.trim()).map(l => {
+                const c = l.split(',');
+                return { classNum: c[0].trim(), seatNum: c[1].trim(), gender: c[3].trim() === '女' ? 'female' : 'male', name: c[4].trim() };
+            });
         }
 
-        function showClassButtons(grade, clickedButton) {
+        function convertClassNumToName(id) {
+            const g = {'7':'七','8':'八','9':'九'}[id[0]];
+            const n = ["","一","二","三","四","五","六","七","八","九","十","十一","十二"][parseInt(id.substring(1))];
+            return `${g}年${n}班`;
+        }
+
+        function showClassButtons(grade, btn) {
             classButtonsContainer.innerHTML = '';
-            studentDisplayContainer.innerHTML = '';
-            messageArea.innerHTML = '<p>請選擇班級以顯示學生名單。</p>';
+            document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('ring-4', 'ring-offset-2'));
+            if (btn) btn.classList.add('ring-4', 'ring-offset-2');
             classPlaceholder.style.display = 'none';
-            // 重置
-            if (generationSection) {
-                generationSection.classList.add('hidden');
-                outputRowsContainer.innerHTML = '';
-                disableCopyButton();
-            }
-
-            document.querySelectorAll('.grade-btn').forEach(btn => btn.classList.remove('ring-4', 'ring-offset-2'));
-            if (clickedButton) clickedButton.classList.add('ring-4', 'ring-offset-2');
-            const baseClassNum = grade * 100;
-            for (let i = 1; i <= 10; i++) {
-                const classNum = baseClassNum + i;
-                const classNumStr = String(classNum); 
-                const className = convertClassNumToName(classNumStr); 
-                const btn = document.createElement('button');
-                btn.textContent = classNumStr; 
-                btn.className = 'class-btn text-gray-800 font-semibold py-2 px-3 rounded-md shadow-sm bg-yellow-400 hover:bg-yellow-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2';
-                btn.onclick = () => showStudents(classNumStr, className, btn);
-                classButtonsContainer.appendChild(btn);
+            for (let i = 1; i <= 12; i++) {
+                const id = `${grade}${i.toString().padStart(2, '0')}`;
+                const b = document.createElement('button');
+                b.textContent = id; b.className = 'class-btn text-gray-800 font-semibold py-2 px-3 rounded-md shadow-sm bg-yellow-400 hover:bg-yellow-500';
+                b.id = `btn-class-${id}`;
+                b.onclick = () => showStudents(id, convertClassNumToName(id), b);
+                classButtonsContainer.appendChild(b);
             }
         }
 
-        function showStudents(classNum, className, clickedButton) {
+        function showStudents(id, name, btn) {
             studentDisplayContainer.innerHTML = '';
-            
-            // 重置產生區塊
-            if (generationSection) {
-                generationSection.classList.add('hidden');
-                outputRowsContainer.innerHTML = '';
-                disableCopyButton();
-            }
-
-            document.querySelectorAll('.class-btn').forEach(btn => btn.classList.remove('ring-4', 'ring-offset-2', 'ring-yellow-600'));
-            if (clickedButton) clickedButton.classList.add('ring-4', 'ring-offset-2', 'ring-yellow-600');
-            const classStudents = allStudentData.filter(student => student.classNum === className);
-            classStudents.sort((a, b) => parseInt(a.seatNum) - parseInt(b.seatNum));
-            if (classStudents.length === 0) {
-                messageArea.innerHTML = `<p class="text-gray-500">班級 ${className} (${classNum}) 沒有找到學生資料。</p>`;
-                return;
-            }
-            messageArea.innerHTML = `<p class="text-gray-700">班級 ${className} (${classNum}) (共 ${classStudents.length} 位學生)</p>`;
-            classStudents.forEach(student => {
-                const block = document.createElement('div');
-                block.className = `student-block flex flex-col items-center justify-center p-4 rounded-lg shadow-md cursor-pointer transition-all duration-200 text-gray-800 ${student.gender === 'female' ? 'bg-pink-200 hover:bg-pink-300' : 'bg-green-200 hover:bg-green-300'}`;
-                block.innerHTML = `<span class="font-medium text-base">${student.seatNum}-${student.name}</span>`;
-                block.dataset.gender = student.gender;
-                block.dataset.selected = 'false';
-                block.dataset.seatNum = student.seatNum; 
-                block.dataset.name = student.name;
-                block.dataset.classId = classNum;
-                block.onclick = toggleStudentSelection;
-                studentDisplayContainer.appendChild(block);
+            document.querySelectorAll('.class-btn').forEach(b => b.classList.remove('ring-4','ring-yellow-600'));
+            if (btn) btn.classList.add('ring-4','ring-yellow-600');
+            const list = allStudentData.filter(s => s.classNum === name).sort((a,b) => a.seatNum - b.seatNum);
+            if (list.length === 0) { messageArea.innerHTML = '找不到學生資料。'; return; }
+            messageArea.innerHTML = `<p>${name} (共 ${list.length} 位)</p>`;
+            list.forEach(s => {
+                const d = document.createElement('div');
+                d.className = `student-block p-4 rounded-lg shadow-md cursor-pointer text-center transition-all ${s.gender==='female'?'bg-pink-100 text-pink-800':'bg-green-100 text-green-800'}`;
+                d.id = `student-${id}-${s.seatNum}`;
+                d.innerHTML = `<span class="font-bold">${s.seatNum}-${s.name}</span>`;
+                Object.assign(d.dataset, { gender: s.gender, selected: 'false', seatNum: s.seatNum, name: s.name, classId: id });
+                d.onclick = () => {
+                    const isS = d.dataset.selected === 'true';
+                    d.dataset.selected = !isS;
+                    d.classList.toggle('selected');
+                    if (s.gender === 'female') {
+                        d.classList.toggle('bg-pink-700'); d.classList.toggle('ring-4'); d.classList.toggle('ring-pink-300'); d.classList.toggle('ring-offset-2');
+                    } else {
+                        d.classList.toggle('bg-green-700'); d.classList.toggle('ring-4'); d.classList.toggle('ring-green-300'); d.classList.toggle('ring-offset-2');
+                    }
+                    d.classList.toggle('text-white');
+                    checkGenerationVisibility();
+                };
+                studentDisplayContainer.appendChild(d);
             });
         }
 
-        function toggleStudentSelection(event) {
-            const block = event.currentTarget;
-            const isSelected = block.dataset.selected === 'true';
-            const isFemale = block.dataset.gender === 'female';
-            const femaleColors = ['bg-pink-200', 'hover:bg-pink-300', 'bg-pink-500', 'hover:bg-pink-600', 'text-white'];
-            const maleColors = ['bg-green-200', 'hover:bg-green-300', 'bg-green-500', 'hover:bg-green-600', 'text-white'];
-            
-            if (isSelected) {
-                block.dataset.selected = 'false';
-                block.classList.remove('selected', isFemale ? femaleColors[2] : maleColors[2], isFemale ? femaleColors[3] : maleColors[3], 'text-white');
-                block.classList.add(isFemale ? femaleColors[0] : maleColors[0], isFemale ? femaleColors[1] : maleColors[1], 'text-gray-800');
-            } else {
-                block.dataset.selected = 'true';
-                block.classList.add('selected', isFemale ? femaleColors[2] : maleColors[2], isFemale ? femaleColors[3] : maleColors[3], 'text-white');
-                block.classList.remove(isFemale ? femaleColors[0] : maleColors[0], isFemale ? femaleColors[1] : maleColors[1], 'text-gray-800');
+        /**
+         * 處理 URL 參數以自動選中並產生
+         * 格式：?select=805-12,805-20&type=warning&clause=11&note=抽菸
+         */
+        async function handleUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const selectData = params.get('select');
+            const type = params.get('type');
+            const clauseNum = params.get('clause');
+            urlNote = params.get('note') || "";
+
+            if (!selectData) return;
+
+            const items = selectData.split(',');
+            const firstItem = items[0].split('-');
+            const classId = firstItem[0];
+            const grade = classId[0];
+
+            // 1. 自動點擊年級
+            const gradeBtn = document.querySelector(`.grade-btn[data-grade="${grade}"]`);
+            if (gradeBtn) showClassButtons(grade, gradeBtn);
+
+            // 2. 自動點擊班級
+            const classBtn = document.getElementById(`btn-class-${classId}`);
+            if (classBtn) {
+                showStudents(classId, convertClassNumToName(classId), classBtn);
+                
+                // 3. 自動點擊學生
+                const targetSeats = items.map(i => i.split('-')[1]);
+                document.querySelectorAll('.student-block').forEach(block => {
+                    if (targetSeats.includes(block.dataset.seatNum)) {
+                        block.click();
+                    }
+                });
             }
-            // 檢查是否該顯示產生區塊
-            checkGenerationVisibility();
+
+            // 4. 自動處理條款
+            if (type) {
+                const typeBtn = document.getElementById(`btn-type-${type}`);
+                if (typeBtn) {
+                    showViolationClauses(type, typeBtn);
+                    
+                    if (clauseNum) {
+                        // 尋找對應編號的條款並點擊
+                        const clauseBlocks = document.querySelectorAll('.violation-block');
+                        for (let block of clauseBlocks) {
+                            if (block.dataset.clauseText.startsWith(clauseNum + ".")) {
+                                block.click();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. 如果條件充足，直接觸發產生
+            if (document.querySelectorAll('.student-block.selected').length > 0 && 
+                document.querySelectorAll('.violation-block.selected').length > 0) {
+                generateOutput();
+            }
         }
 
-        function showViolationClauses(category, clickedButton) {
-            violationDisplayContainer.innerHTML = '';
-            violationPlaceholder.style.display = 'none';
-            document.querySelectorAll('.violation-type-btn').forEach(btn => btn.classList.remove('ring-4', 'ring-offset-2'));
-            if (clickedButton) clickedButton.classList.add('ring-4', 'ring-offset-2');
-            const clauses = violationData[category];
-            const colors = {
-                warning: ['bg-yellow-100', 'bg-yellow-500'],
-                minorDemerit: ['bg-orange-100', 'bg-orange-500'],
-                majorDemerit: ['bg-red-100', 'bg-red-500']
-            };
-            clauses.forEach(clause => {
-                const block = document.createElement('div');
-                block.className = `violation-block p-4 rounded-lg shadow-sm cursor-pointer transition-all duration-200 text-left ${colors[category][0]} text-${category === 'warning' ? 'yellow' : category === 'minorDemerit' ? 'orange' : 'red'}-800`;
-                block.innerHTML = `<span class="text-sm font-medium">${clause}</span>`;
-                block.dataset.type = category;
-                block.dataset.selected = 'false';
-                block.dataset.clauseText = clause; 
-                block.onclick = (e) => toggleClauseSelection(e, colors[category]);
-                violationDisplayContainer.appendChild(block);
+        function showViolationClauses(cat, btn) {
+            violationDisplayContainer.innerHTML = ''; violationPlaceholder.style.display = 'none';
+            document.querySelectorAll('.violation-type-btn').forEach(b => b.classList.remove('ring-4','ring-offset-2'));
+            btn.classList.add('ring-4','ring-offset-2');
+            const colorMap = { merit:'emerald', warning:'yellow', minorDemerit:'orange', majorDemerit:'red', special:'purple' };
+            const cls = colorMap[cat];
+            violationData[cat].forEach(clause => {
+                const d = document.createElement('div');
+                d.className = `violation-block p-4 rounded-lg shadow-sm cursor-pointer transition-all bg-${cls}-100 text-${cls}-900`;
+                d.innerHTML = `<span class="text-sm font-bold">${clause}</span>`;
+                Object.assign(d.dataset, { type: cat, selected: 'false', clauseText: clause });
+                d.onclick = () => {
+                    const isS = d.dataset.selected === 'true';
+                    d.dataset.selected = !isS;
+                    d.classList.toggle('selected');
+                    d.classList.toggle(`bg-${cls}-700`);
+                    d.classList.toggle('text-white');
+                    d.classList.toggle('ring-4');
+                    d.classList.toggle(`ring-${cls}-300`);
+                    d.classList.toggle('ring-offset-2');
+                    checkGenerationVisibility();
+                };
+                violationDisplayContainer.appendChild(d);
             });
-            // 切換條款類別時，可能清空了選擇，檢查一下
-            checkGenerationVisibility();
         }
 
-        function toggleClauseSelection(event, colors) {
-            const block = event.currentTarget;
-            const isSelected = block.dataset.selected === 'true';
-            if (isSelected) {
-                block.dataset.selected = 'false';
-                block.classList.remove('selected', colors[1], 'text-white');
-                block.classList.add(colors[0]);
-            } else {
-                block.dataset.selected = 'true';
-                block.classList.add('selected', colors[1], 'text-white');
-                block.classList.remove(colors[0]);
-            }
-            // 檢查是否該顯示產生區塊
-            checkGenerationVisibility();
-        }
-
-        // 設置按鈕為停用狀態
-        function disableCopyButton() {
-            copyButton.disabled = true;
-            copyButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'hover:scale-105');
-            copyButton.classList.add('bg-gray-400', 'cursor-not-allowed', 'scale-100');
-        }
-
-        // 設置按鈕為啟用狀態
-        function enableCopyButton() {
-            copyButton.disabled = false;
-            copyButton.classList.remove('bg-gray-400', 'cursor-not-allowed', 'scale-100');
-            copyButton.classList.add('bg-green-600', 'hover:bg-green-700', 'hover:scale-105');
-        }
+        function disableCopyButton() { copyButton.disabled = true; copyButton.className = 'text-white font-bold py-3 px-6 rounded-lg bg-gray-400 cursor-not-allowed'; }
+        function enableCopyButton() { copyButton.disabled = false; copyButton.className = 'text-white font-bold py-3 px-6 rounded-lg bg-green-600 hover:bg-green-700 shadow-lg transition-all'; }
 
         function generateOutput() {
-            outputMessage.textContent = ''; 
-            outputRowsContainer.innerHTML = ''; 
-            
-            // 先重置按鈕狀態
-            disableCopyButton();
+            outputRowsContainer.innerHTML = '';
+            const ss = document.querySelectorAll('.student-block.selected');
+            const vs = document.querySelectorAll('.violation-block.selected');
+            const now = new Date(); const dStr = `${now.getMonth()+1}/${now.getDate()}`;
+            const map = { merit:'嘉獎', warning:'警告', minorDemerit:'小過', majorDemerit:'大過', special:'特別處罰' };
+            const numMap = { merit:'7', warning:'9', minorDemerit:'10', majorDemerit:'11', special:'12' };
 
-            const selectedStudents = document.querySelectorAll('.student-block.selected');
-            const selectedViolations = document.querySelectorAll('.violation-block.selected');
-            if (selectedStudents.length === 0 || selectedViolations.length === 0) {
-                // 理論上區塊被隱藏了按不到，但保留檢查
-                outputMessage.textContent = '錯誤：請至少選擇一位學生及一項懲處條款。';
-                outputMessage.className = 'text-red-600 mb-2 text-sm h-5';
-                return;
+            const vList = Array.from(vs).map(b => {
+                const t = b.dataset.clauseText; const m = t.match(/^(\d+)\./);
+                return { code: `${numMap[b.dataset.type]}-${m?m[1]:'0'}`, text: t.replace(/^(\d+)\.\s*/,''), cat: b.dataset.type };
+            }).sort((a,b) => a.code.localeCompare(b.code));
+
+            const codes = vList.map(v => v.code).join(', ');
+            
+            // 處理事由：結合條款文字與補充說明
+            let combinedTexts = vList.map(v => v.text).join('、');
+            if (urlNote && urlNote.trim() !== "") {
+                combinedTexts += (combinedTexts ? "、" : "") + urlNote;
             }
-            const today = new Date();
-            const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
-            const categoryMap = { warning: '警告', minorDemerit: '小過', majorDemerit: '大過' };
-            const conditionMap = { warning: ['1', '未再犯即撤消'], minorDemerit: ['1', '有改善始准予銷過'], majorDemerit: ['1', '有改善始准予銷過'] };
-            // *** 新增：類別與代碼的對應 (警告:9, 小過:10, 大過:11) ***
-            const categoryNumMap = { warning: '9', minorDemerit: '10', majorDemerit: '11' };
-            
-            let totalRows = 0;
 
-            // *** 修改邏輯：先整理所有選取條款 ***
-            // 1. 將所有選取條款轉為資料物件
-            const violationDataList = Array.from(selectedViolations).map(block => {
-                const fullClause = block.dataset.clauseText;
-                const catKey = block.dataset.type;
-                const ruleNumMatch = fullClause.match(/^(\d+)\./);
-                const ruleNum = ruleNumMatch ? ruleNumMatch[1] : '0'; // 無編號則設為0
-                const clauseOnly = fullClause.replace(/^(\d+)\.\s*/, '').trim();
-                const categoryNum = categoryNumMap[catKey];
-                
-                return {
-                    catKey: catKey, // 類別 key (warning...)
-                    ruleCode: `${categoryNum}-${ruleNum}`, // 9-2
-                    ruleNumInt: parseInt(ruleNum, 10) || 0, // 用於排序
-                    clauseText: clauseOnly // 事由文字
-                };
+            const cat = map[vList[0].cat];
+
+            ss.forEach(s => {
+                const r = document.createElement('div'); r.className = 'output-row p-3 border-b bg-gray-50 rounded-lg space-y-2';
+                const l1 = document.createElement('div'); l1.className = 'flex flex-wrap gap-2';
+                const fields = [dStr, s.dataset.classId[0], parseInt(s.dataset.classId.substring(1)), now.getMonth()+1, now.getDate(), s.dataset.seatNum, s.dataset.name, cat, codes];
+                fields.forEach((f, idx) => {
+                    const w = [5,3,3,3,3,4,7,5,6][idx];
+                    const i = document.createElement('input'); i.value = f; i.className = 'editable-field'; i.style.width = w+'rem';
+                    l1.appendChild(i);
+                });
+                const i2 = document.createElement('input'); i2.value = combinedTexts; i2.className = 'editable-field editable-reason-field';
+                r.appendChild(l1); r.appendChild(i2); outputRowsContainer.appendChild(r);
             });
-
-            // 2. 依據條款編號排序 (例如 9-2, 9-5)
-            violationDataList.sort((a, b) => a.ruleNumInt - b.ruleNumInt);
-
-            // 3. 合併代碼與事由
-            // 代碼: "9-2, 9-5"
-            const combinedRuleCodes = violationDataList.map(v => v.ruleCode).join(', ');
-            // 事由: "事由1、事由2"
-            const combinedClauseTexts = violationDataList.map(v => v.clauseText).join('、');
-            
-            // 4. 取得第一筆條款的類別資訊 (假設所有選取條款屬於同一類別，因為 UI 切換標籤會清空)
-            const firstViolation = violationDataList[0];
-            const categoryName = categoryMap[firstViolation.catKey];
-            const conditionCol9 = conditionMap[firstViolation.catKey][0];
-            const conditionCol10 = conditionMap[firstViolation.catKey][1];
-
-            // *** 遍歷學生並產生資料列 (每個學生一列) ***
-            selectedStudents.forEach(studentBlock => {
-                totalRows++; // 每個學生一列
-                const fullClassId = studentBlock.dataset.classId;
-                const grade = fullClassId.charAt(0);
-                const classVal = String(parseInt(fullClassId.substring(1)));
-
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'output-row p-2 border-b bg-gray-50 rounded-lg';
-                const l1 = document.createElement('div'); l1.className = 'flex flex-wrap gap-2 items-center';
-                
-                // 欄位建立
-                l1.appendChild(createEditableField(dateStr, 'text', '', 'width: 5rem;')); // 日期
-                l1.appendChild(createEditableField(grade, 'text', '', 'width: 3rem;')); // 年級
-                l1.appendChild(createEditableField(classVal, 'text', '', 'width: 3rem;')); // 班級
-                l1.appendChild(createEditableField(String(today.getMonth() + 1), 'text', '', 'width: 3rem;')); // 月
-                l1.appendChild(createEditableField(String(today.getDate()), 'text', '', 'width: 3rem;')); // 日
-                l1.appendChild(createEditableField(studentBlock.dataset.seatNum, 'text', '', 'width: 4rem;')); // 座號
-                l1.appendChild(createEditableField(studentBlock.dataset.name, 'text', '', 'width: 7rem;')); // 姓名
-                l1.appendChild(createEditableField(categoryName, 'text', '', 'width: 5rem;')); // 獎懲種類
-                // *** 修改：顯示合併後的條款代碼 ***
-                l1.appendChild(createEditableField(combinedRuleCodes, 'text', '', 'width: 6rem;')); // 依據條款 (9-1, 9-5) (寬度稍微加大)
-                l1.appendChild(createEditableDropdown(conditionCol9, ['1', '2'], 'width: 5rem;')); // 獎懲數
-                l1.appendChild(createEditableDropdown(conditionCol10, ['未再犯即撤消', '有改善始准予銷過'], 'flex-grow: 1; min-width: 150px;')); // 銷過條件
-
-                const l2 = document.createElement('div');
-                // *** 修改：顯示合併後的事由 ***
-                l2.appendChild(createEditableField(combinedClauseTexts, 'text', 'editable-reason-field')); // 事由
-
-                rowDiv.appendChild(l1);
-                rowDiv.appendChild(l2);
-                outputRowsContainer.appendChild(rowDiv);
-            });
-            
-            outputMessage.textContent = `成功產生 ${totalRows} 筆資料。您可以修改欄位或直接傳送。`;
-            outputMessage.className = 'text-green-600 mb-2 text-sm h-5';
-            
-            // 成功產生資料後，啟用按鈕
-            enableCopyButton();
+            outputMessage.textContent = `已產生 ${ss.length} 筆資料。`; enableCopyButton();
         }
 
-        // *** 核心功能：複製並傳送到試算表 ***
         async function copyAndSendToSheet() {
-            const rows = outputRowsContainer.querySelectorAll('.output-row');
-            if (rows.length === 0) {
-                outputMessage.textContent = '錯誤：沒有可處理的資料。';
-                outputMessage.className = 'text-red-600 mb-2 text-sm h-5';
-                return;
-            }
-
-            const dataToCopy = [];
-            const dataToSend = [];
-
-            // 1. 收集資料
-            rows.forEach(row => {
-                const inputs1 = row.children[0].querySelectorAll('input, select');
-                const inputReason = row.children[1].querySelector('input');
-                const rowValues = [];
-                
-                // 取出第一行前 7 個欄位 (日期~姓名)
-                for(let i=0; i<7; i++) rowValues.push(inputs1[i].value);
-                // 插入事由 (第 8 個)
-                rowValues.push(inputReason.value);
-                // 取出第一行剩下的欄位 (獎懲~銷過)
-                for(let i=7; i<inputs1.length; i++) rowValues.push(inputs1[i].value);
-
-                dataToCopy.push(rowValues.join('\t')); // 複製用 (Tab 分隔)
-                dataToSend.push(rowValues);            // 傳送用 (陣列)
+            const rows = document.querySelectorAll('.output-row');
+            const url = webappUrlInput.value.trim();
+            const copyD = [], sendD = [];
+            rows.forEach(r => {
+                const v = Array.from(r.querySelectorAll('input')).map(i => i.value);
+                const s = [v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[8], v[9], v[7]];
+                copyD.push(s.join('\t')); sendD.push(s);
             });
-
-            // 2. 執行複製
-            const tempTa = document.createElement('textarea');
-            tempTa.value = dataToCopy.join('\n');
-            document.body.appendChild(tempTa);
-            tempTa.select();
-            try {
-                document.execCommand('copy');
-            } catch (err) {
-                console.error('複製失敗', err);
-            }
-            document.body.removeChild(tempTa);
-
-            // 3. 執行傳送 (如果有網址)
-            const webAppUrl = webappUrlInput.value.trim();
-            if (webAppUrl) {
-                outputMessage.innerHTML = '<span class="spinner"></span> 資料複製成功！正在建立 Google Doc 與 PDF...';
-                outputMessage.className = 'text-blue-600 mb-2 text-sm h-5 flex items-center';
-
+            const ta = document.createElement('textarea'); ta.value = copyD.join('\n'); document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+            if (url) {
+                outputMessage.innerHTML = '<span class="spinner"></span> 正在同步至試算表...';
                 try {
-                    // 使用 no-cors 模式發送
-                    await fetch(webAppUrl, {
-                        method: 'POST',
-                        mode: 'no-cors', 
-                        headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify({ data: dataToSend })
-                    });
-                    
-                    // 修改成功訊息
-                    setTimeout(() => {
-                        outputMessage.textContent = `成功！資料已同步，且 PDF 已建立於您的 Google Drive (與範本同資料夾)。`;
-                        outputMessage.className = 'text-green-600 mb-2 text-sm h-5';
-                    }, 2500); // 稍微加長等待時間，讓感覺更真實
-                } catch (err) {
-                    console.error(err);
-                    outputMessage.textContent = '複製成功，但雲端傳送失敗 (請檢查網址或權限)。';
-                    outputMessage.className = 'text-orange-600 mb-2 text-sm h-5';
-                }
-            } else {
-                outputMessage.textContent = '複製成功！(未設定網址，因此未建立 PDF)';
-                outputMessage.className = 'text-green-600 mb-2 text-sm h-5';
+                    await fetch(url, { method:'POST', mode:'no-cors', body: JSON.stringify(sendD) });
+                    outputMessage.textContent = '✅ 已複製並同步完成！'; outputMessage.className = 'text-green-600 font-bold';
+                } catch (e) { outputMessage.textContent = '❌ 同步失敗，僅完成複製。'; }
             }
         }
+
+        window.onload = async () => { 
+            initWebAppUrl(); 
+            await fetchStudentData(); 
+            handleUrlParams(); 
+        };
     </script>
 </body>
 </html>
